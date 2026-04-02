@@ -4,7 +4,7 @@ import { Colors } from '../constants/colors';
 
 type Props = {
   text: string;
-  onPress: () => void;
+  onPress: () => any;
 };
 
 export default function Button({ text, onPress }: Props) {

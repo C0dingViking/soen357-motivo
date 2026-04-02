@@ -6,4 +6,5 @@ export const Colors = {
   cardBackground: '#E6F4E7',
   strongAccent: '#FFC857',
   softAccent: '#FDE8D2',
+  errorRed: '#E63946',
 };

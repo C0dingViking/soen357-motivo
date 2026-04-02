@@ -1,5 +1,15 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  Image,
+  ScrollView,
+  KeyboardAvoidingView,
+  Platform,
+} from 'react-native';
 
 import { supabase } from '../lib/supabase';
 import { Colors } from '../constants/colors';
@@ -9,49 +19,69 @@ import logo from '../assets/logo.png';
 type Props = { goToSignUp: () => void };
 
 export default function LoginScreen({ goToSignUp }: Props) {
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
 
   const handleLogin = async () => {
+    if (!email || !password) {
+      setError('Please enter both your email and password');
+      return;
+    }
+
     const { data, error } = await supabase.auth.signInWithPassword({
-      email: username,
+      email,
       password,
     });
-    if (error) setError(error.message);
-    else console.log('Logged in', data);
+
+    if (error) {
+      setError(`Supabase error: ${error.message}`);
+    }
   };
 
   return (
-    <View style={styles.container}>
-      <Image source={logo} style={styles.logo} resizeMode="contain" />
-      <Text style={styles.title}>Login</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Username"
-        placeholderTextColor={Colors.textMedium}
-        value={username}
-        onChangeText={setUsername}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Password"
-        placeholderTextColor={Colors.textMedium}
-        secureTextEntry
-        value={password}
-        onChangeText={setPassword}
-      />
-      {error ? <Text style={styles.error}>{error}</Text> : null}
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
+      <ScrollView contentContainerStyle={{ flexGrow: 1 }} keyboardShouldPersistTaps="handled">
+        <View style={styles.container}>
+          <Image source={logo} style={styles.logo} resizeMode="contain" />
+          <Text style={styles.title}>Login</Text>
+          <TextInput
+            style={error ? styles.inputError : styles.input}
+            placeholder="Email"
+            placeholderTextColor={Colors.textMedium}
+            value={email}
+            onChangeText={(text) => {
+              setEmail(text);
+              setError('');
+            }}
+          />
+          <TextInput
+            style={error ? styles.inputError : styles.input}
+            placeholder="Password"
+            placeholderTextColor={Colors.textMedium}
+            secureTextEntry
+            value={password}
+            onChangeText={(text) => {
+              setPassword(text);
+              setError('');
+            }}
+          />
+          {error ? <Text style={styles.error}>{error}</Text> : null}
 
-      <Button text="Login" onPress={() => console.log('Login pressed')} />
+          <Button text="Login" onPress={handleLogin} />
 
-      <TouchableOpacity onPress={goToSignUp}>
-        <Text style={[styles.text, { marginTop: 20 }]}>
-          Create an
-          <Text style={styles.link}> account</Text>
-        </Text>
-      </TouchableOpacity>
-    </View>
+          <TouchableOpacity onPress={goToSignUp}>
+            <Text style={[styles.text, { marginTop: 20 }]}>
+              Create an
+              <Text style={styles.link}> account</Text>
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -80,6 +110,16 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.softAccent,
     borderColor: Colors.strongAccent,
     borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    marginBottom: 20,
+    color: Colors.textDark,
+  },
+  inputError: {
+    backgroundColor: Colors.softAccent,
+    borderColor: Colors.errorRed,
+    borderWidth: 2,
     borderRadius: 8,
     paddingHorizontal: 16,
     paddingVertical: 12,
