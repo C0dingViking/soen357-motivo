@@ -5,9 +5,10 @@ import { useFonts, Inter_400Regular, Inter_700Bold } from '@expo-google-fonts/in
 
 import LoginScreen from './screens/LoginScreen';
 import SignUpScreen from './screens/SignUpScreen';
+import HomeScreen from './screens/HomeScreen';
 
 export default function App() {
-  const [screen, setScreen] = useState<'login' | 'signup'>('login');
+  const [screen, setScreen] = useState<'login' | 'signup' | 'home'>('login');
 
   let [fontsLoaded] = useFonts({
     Inter_400Regular,
@@ -23,8 +24,13 @@ export default function App() {
 
   return (
     <View style={{ flex: 1 }}>
-      {screen === 'login' && <LoginScreen goToSignUp={() => setScreen('signup')} />}
-      {screen === 'signup' && <SignUpScreen goToLogin={() => setScreen('login')} />}
+      {screen === 'login' && (
+        <LoginScreen goToSignUp={() => setScreen('signup')} gotToHome={() => setScreen('home')} />
+      )}
+      {screen === 'signup' && (
+        <SignUpScreen goToLogin={() => setScreen('login')} gotToHome={() => setScreen('home')} />
+      )}
+      {screen === 'home' && <HomeScreen />}
     </View>
   );
 }

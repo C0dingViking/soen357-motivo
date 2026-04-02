@@ -16,9 +16,12 @@ import { Colors } from '../constants/colors';
 import Button from '../components/Button';
 import logo from '../assets/logo.png';
 
-type Props = { goToLogin: () => void };
+type Props = {
+  goToLogin: () => void;
+  gotToHome: () => void;
+};
 
-export default function SignUpScreen({ goToLogin }: Props) {
+export default function SignUpScreen({ goToLogin, gotToHome }: Props) {
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [username, setUsername] = useState('');
@@ -175,6 +178,8 @@ export default function SignUpScreen({ goToLogin }: Props) {
         return;
       }
     }
+
+    gotToHome();
   };
 
   const _resetErrorStates = () => {

@@ -16,9 +16,12 @@ import { Colors } from '../constants/colors';
 import Button from '../components/Button';
 import logo from '../assets/logo.png';
 
-type Props = { goToSignUp: () => void };
+type Props = {
+  goToSignUp: () => void;
+  gotToHome: () => void;
+};
 
-export default function LoginScreen({ goToSignUp }: Props) {
+export default function LoginScreen({ goToSignUp, gotToHome }: Props) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -36,6 +39,8 @@ export default function LoginScreen({ goToSignUp }: Props) {
 
     if (error) {
       setError(`Supabase error: ${error.message}`);
+    } else {
+      gotToHome();
     }
   };
 
