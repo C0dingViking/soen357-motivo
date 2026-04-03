@@ -1,10 +1,11 @@
 import React from 'react';
-import { View, TouchableOpacity, StyleSheet, Platform } from 'react-native';
+import { View, TouchableOpacity, StyleSheet, Platform, Image } from 'react-native';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { Feather } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Colors } from '../constants/colors';
+import EmeraldPng from '../assets/navbar/Emerald.png';
 
 type IconName = React.ComponentProps<typeof Feather>['name'];
 
@@ -45,6 +46,7 @@ export default function BottomNavBar({ state, descriptors, navigation }: BottomT
           };
 
           const icon = ROUTE_ICONS[route.name] ?? 'circle';
+          const isRewards = route.name === 'Rewards';
 
           return (
             <TouchableOpacity
@@ -63,7 +65,11 @@ export default function BottomNavBar({ state, descriptors, navigation }: BottomT
                 isFocused && isLast && styles.tabButtonFocusedLast,
               ]}
             >
-              <Feather name={icon} size={38} color={Colors.textDark} />
+              {isRewards ? (
+                <Image source={EmeraldPng} style={styles.rewardsIcon} resizeMode="contain" />
+              ) : (
+                <Feather name={icon} size={38} />
+              )}
             </TouchableOpacity>
           );
         })}
@@ -99,5 +105,9 @@ const styles = StyleSheet.create({
   tabButtonFocusedLast: {
     borderTopRightRadius: 0,
     borderBottomRightRadius: 0,
+  },
+  rewardsIcon: {
+    width: 50,
+    height: 50,
   },
 });
