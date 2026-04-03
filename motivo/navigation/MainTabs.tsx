@@ -14,7 +14,7 @@ const Tab = createMaterialTopTabNavigator<MainTabParamList>();
 export default function MainTabs() {
   return (
     <Tab.Navigator
-      screenOptions={{ swipeEnabled: true }}
+      screenOptions={{ swipeEnabled: false }}
       tabBarPosition="bottom"
       tabBar={(props) => <BottomNavBar {...props} />}
     >
