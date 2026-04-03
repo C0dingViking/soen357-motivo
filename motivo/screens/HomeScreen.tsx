@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { Text, StyleSheet } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { supabase } from '../lib/supabase';
 import { Colors } from '../constants/colors';
+import Header from '../components/Header';
 
 export default function HomeScreen() {
   const [fullName, setFullName] = useState('');
@@ -32,12 +34,13 @@ export default function HomeScreen() {
   }, []);
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
+      <Header />
       <Text style={styles.title}>Welcome{fullName ? `, ${fullName}` : 'John Doe'}</Text>
 
       <Text style={styles.subtitle}>This is your home page</Text>
       <Text style={styles.subtitle}>🚧 More features coming soon 🚧</Text>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -45,7 +48,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.background,
-    justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
   },
