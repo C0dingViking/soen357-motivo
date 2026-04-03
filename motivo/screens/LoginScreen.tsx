@@ -15,8 +15,8 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { supabase } from '../lib/supabase';
 import { Colors } from '../constants/colors';
 import Button from '../components/Button';
-import logo from '../assets/logo.png';
 import type { RootStackParamList } from '../navigation/types';
+import logo from '../assets/logo_with_name.png';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Login'>;
 
