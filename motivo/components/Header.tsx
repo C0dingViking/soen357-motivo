@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Image } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Colors } from '../constants/colors';
 import { supabase } from '../lib/supabase';
@@ -17,6 +18,7 @@ type UserStats = {
 };
 
 export default function Header() {
+  const insets = useSafeAreaInsets();
   const [userData, setUserData] = useState<UserStats>({
     name: 'User',
     rank: 0,
@@ -53,7 +55,7 @@ export default function Header() {
   }, []);
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingTop: Math.max(insets.top, 0) + 12 }]}>
       <View style={styles.left}>
         <Image source={logo} style={styles.logo} />
         <View style={{ flexDirection: 'column' }}>
@@ -88,19 +90,19 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingTop: 45,
     paddingBottom: 10,
-    width: '112%', //hacky but makes it take the full width of the screen
-    marginTop: -55, //hacky but makes it overlap with the top of the screen
+    width: '100%',
     marginBottom: 20,
   },
   left: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
   },
   right: {
     flexDirection: 'column',
+    alignItems: 'flex-end',
   },
   logo: {
     width: 60,

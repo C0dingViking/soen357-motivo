@@ -8,6 +8,7 @@ import LoginScreen from '../screens/LoginScreen';
 import SignUpScreen from '../screens/SignUpScreen';
 import MainTabs from './MainTabs';
 import { RootStackParamList } from './types';
+import { Colors } from '../constants/colors';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -38,7 +39,12 @@ export default function RootNavigator() {
 
   return (
     <NavigationContainer>
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Navigator
+        screenOptions={{
+          headerShown: false,
+          contentStyle: { backgroundColor: Colors.background },
+        }}
+      >
         {session ? (
           <Stack.Screen name="Main" component={MainTabs} />
         ) : (
