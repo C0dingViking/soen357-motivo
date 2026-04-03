@@ -88,14 +88,10 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingTop: 20,
+    paddingTop: 45,
     paddingBottom: 10,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    borderBottomLeftRadius: 0,
-    borderBottomRightRadius: 0,
     width: '112%', //hacky but makes it take the full width of the screen
-    marginTop: -8,
+    marginTop: -55, //hacky but makes it overlap with the top of the screen
     marginBottom: 20,
   },
   left: {
