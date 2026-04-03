@@ -1,5 +1,5 @@
 import React from 'react';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
 
 import HomeScreen from '../screens/HomeScreen';
 import ProgressScreen from '../screens/ProgressScreen';
@@ -9,12 +9,13 @@ import SettingsScreen from '../screens/SettingsScreen';
 import { MainTabParamList } from './types';
 import BottomNavBar from '../components/BottomNavBar';
 
-const Tab = createBottomTabNavigator<MainTabParamList>();
+const Tab = createMaterialTopTabNavigator<MainTabParamList>();
 
 export default function MainTabs() {
   return (
     <Tab.Navigator
-      screenOptions={{ headerShown: false }} // TODO: add header
+      screenOptions={{ swipeEnabled: true }}
+      tabBarPosition="bottom"
       tabBar={(props) => <BottomNavBar {...props} />}
     >
       <Tab.Screen name="Home" component={HomeScreen} />
