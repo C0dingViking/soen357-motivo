@@ -14,7 +14,7 @@ import {
 import { supabase } from '../lib/supabase';
 import { Colors } from '../constants/colors';
 import Button from '../components/Button';
-import logo from '../assets/logo.png';
+import logo from '../assets/logo_with_name.png';
 
 type Props = {
   goToLogin: () => void;
