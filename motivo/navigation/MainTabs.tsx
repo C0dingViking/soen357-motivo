@@ -1,6 +1,5 @@
 import React from 'react';
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { StyleSheet, View } from 'react-native';
 
 import HomeScreen from '../screens/HomeScreen';
@@ -17,7 +16,7 @@ const Tab = createMaterialTopTabNavigator<MainTabParamList>();
 
 export default function MainTabs() {
   return (
-    <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
+    <View style={styles.container}>
       <Header />
       <View style={styles.scene}>
         <Tab.Navigator
@@ -32,12 +31,12 @@ export default function MainTabs() {
           <Tab.Screen name="Settings" component={SettingsScreen} />
         </Tab.Navigator>
       </View>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
+  container: {
     flex: 1,
     backgroundColor: Colors.background,
   },

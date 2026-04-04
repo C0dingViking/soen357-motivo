@@ -13,6 +13,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Colors } from '../constants/colors';
 import EmeraldPng from '../assets/navbar/Emerald.png';
+import { withOpacity } from '../utils/colors';
 
 type IconName = React.ComponentProps<typeof Feather>['name'];
 
@@ -135,10 +136,9 @@ export default function BottomNavBar({
 
 const styles = StyleSheet.create({
   wrapper: {
-    backgroundColor: 'transparent',
+    backgroundColor: withOpacity(Colors.primaryGreen, 0.6),
   },
   bar: {
-    backgroundColor: 'rgba(54, 159, 58, 0.6)',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
