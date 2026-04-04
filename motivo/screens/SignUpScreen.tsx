@@ -10,18 +10,17 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 import { supabase } from '../lib/supabase';
 import { Colors } from '../constants/colors';
 import Button from '../components/Button';
+import type { RootStackParamList } from '../navigation/types';
 import logo from '../assets/logo_with_name.png';
 
-type Props = {
-  goToLogin: () => void;
-  gotToHome: () => void;
-};
+type Props = NativeStackScreenProps<RootStackParamList, 'SignUp'>;
 
-export default function SignUpScreen({ goToLogin, gotToHome }: Props) {
+export default function SignUpScreen({ navigation }: Props) {
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [username, setUsername] = useState('');
@@ -179,7 +178,7 @@ export default function SignUpScreen({ goToLogin, gotToHome }: Props) {
       }
     }
 
-    gotToHome();
+    // Auth state listener in RootNavigator will switch to the Main tabs when a session is established.
   };
 
   const _resetErrorStates = () => {
@@ -259,7 +258,7 @@ export default function SignUpScreen({ goToLogin, gotToHome }: Props) {
 
           <Button text="Sign Up" onPress={handleSignUp} />
 
-          <TouchableOpacity onPress={goToLogin}>
+          <TouchableOpacity onPress={() => navigation.navigate('Login')}>
             <Text style={[styles.text, { marginTop: 20 }]}>
               Back to
               <Text style={styles.link}> Login</Text>

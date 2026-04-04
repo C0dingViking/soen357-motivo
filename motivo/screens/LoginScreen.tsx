@@ -10,18 +10,17 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 import { supabase } from '../lib/supabase';
 import { Colors } from '../constants/colors';
 import Button from '../components/Button';
+import type { RootStackParamList } from '../navigation/types';
 import logo from '../assets/logo_with_name.png';
 
-type Props = {
-  goToSignUp: () => void;
-  gotToHome: () => void;
-};
+type Props = NativeStackScreenProps<RootStackParamList, 'Login'>;
 
-export default function LoginScreen({ goToSignUp, gotToHome }: Props) {
+export default function LoginScreen({ navigation }: Props) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -39,8 +38,6 @@ export default function LoginScreen({ goToSignUp, gotToHome }: Props) {
 
     if (error) {
       setError(`Supabase error: ${error.message}`);
-    } else {
-      gotToHome();
     }
   };
 
@@ -78,7 +75,7 @@ export default function LoginScreen({ goToSignUp, gotToHome }: Props) {
 
           <Button text="Login" onPress={handleLogin} />
 
-          <TouchableOpacity onPress={goToSignUp}>
+          <TouchableOpacity onPress={() => navigation.navigate('SignUp')}>
             <Text style={[styles.text, { marginTop: 20 }]}>
               Create an
               <Text style={styles.link}> account</Text>
