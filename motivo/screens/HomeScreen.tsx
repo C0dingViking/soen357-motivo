@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Text, StyleSheet, View, ActivityIndicator, FlatList } from 'react-native';
+import { Text, StyleSheet, View, ActivityIndicator, SectionList } from 'react-native';
 
 import { supabase } from '../lib/supabase';
 import { Colors } from '../constants/colors';
@@ -14,7 +14,6 @@ export default function HomeScreen() {
   const [fullName, setFullName] = useState('');
   const [habits, setHabits] = useState<HabitWithCompletion[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showCelebration, setShowCelebration] = useState(false);
 
   const fetchHabits = async (userId: string) => {
     const { data, error } = await supabase
@@ -75,14 +74,10 @@ export default function HomeScreen() {
   const handleToggle = (id: string) => {
     setHabits((prev) => prev.map((h) => (h.id === id ? { ...h, completed: !h.completed } : h)));
     const habit = habits.find((h) => h.id === id);
-    if (habit && !habit.completed) {
-      setShowCelebration(true);
-
-      setTimeout(() => {
-        setShowCelebration(false);
-      }, 1000);
-    }
   };
+
+  const activeHabits = habits.filter((h) => !h.completed);
+  const completedHabits = habits.filter((h) => h.completed);
 
   return (
     <View style={styles.container}>
@@ -94,9 +89,27 @@ export default function HomeScreen() {
         {loading ? <ActivityIndicator size="large" color={Colors.primaryGreen} /> : null}
 
         {!loading && habits.length > 0 && (
-          <FlatList
-            data={habits}
-            keyExtractor={(item) => item.id}
+          // <FlatList
+          //   data={habits}
+          //   keyExtractor={(item) => item.id}
+          //   renderItem={({ item }) => (
+          // <HabitCard
+          //   id={item.id}
+          //   name={item.name}
+          //   type={item.goal_type}
+          //   fallback={item.fallback}
+          //   goal={item.goal_value}
+          //   completed={item.completed}
+          //   onToggle={handleToggle}
+          // />
+          //   )}
+          //   contentContainerStyle={{}}
+          // />
+          <SectionList
+            sections={[
+              { title: 'Active', data: activeHabits },
+              { title: 'Completed', data: completedHabits },
+            ]}
             renderItem={({ item }) => (
               <HabitCard
                 id={item.id}
@@ -108,7 +121,9 @@ export default function HomeScreen() {
                 onToggle={handleToggle}
               />
             )}
-            contentContainerStyle={{}}
+            renderSectionHeader={({ section }) => (
+              <Text style={styles.sectionTitle}>{section.title}</Text>
+            )}
           />
         )}
 
@@ -151,5 +166,13 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  sectionTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: Colors.textMedium,
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+    marginBottom: 10,
   },
 });
