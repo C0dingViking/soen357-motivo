@@ -1,11 +1,8 @@
 import React, { useMemo } from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
-import { Dimensions } from 'react-native';
 
 import { Colors } from '../constants/colors';
 import { withOpacity } from '../utils/colors';
-
-const SCREEN_WIDTH = Dimensions.get('window').width;
 
 const MOTIVATION_PREFIXES = [
   'Busy?',
