@@ -12,6 +12,8 @@ interface HabitWithCompletion extends Habit {
   completed: boolean;
 }
 
+const getTodayDate = () => new Date().toISOString().split('T')[0];
+
 export default function HomeScreen() {
   const [fullName, setFullName] = useState('');
   const [habits, setHabits] = useState<HabitWithCompletion[]>([]);
@@ -31,9 +33,24 @@ export default function HomeScreen() {
       return;
     }
 
+    const today = getTodayDate();
+    const { data: completionData, error: completionError } = await supabase
+      .from('habit_completions')
+      .select('habit_id')
+      .eq('user_id', userId)
+      .eq('completed_date', today);
+
+    if (completionError) {
+      console.error('Error fetching completion status:', completionError);
+    }
+
+    const completedHabitIds = new Set(
+      (completionData ?? []).map((completion) => completion.habit_id),
+    );
+
     const formatted: HabitWithCompletion[] = (data ?? []).map((habit) => ({
       ...habit,
-      completed: false,
+      completed: completedHabitIds.has(habit.id),
     }));
 
     setHabits(formatted);
@@ -75,13 +92,72 @@ export default function HomeScreen() {
     fetchProfile();
   }, []);
 
-  const handleToggle = (id: string) => {
-    setHabits((prev) => prev.map((h) => (h.id === id ? { ...h, completed: !h.completed } : h)));
+  const handleToggle = async (id: string) => {
     const habit = habits.find((h) => h.id === id);
+    if (!habit) return;
 
-    if (habit && !habit.completed) {
-      setShowFireworks(true);
-      setAnimationLoopCounter(0);
+    const previousCompleted = habit.completed;
+    const nextCompleted = !previousCompleted;
+
+    setHabits((prev) => prev.map((h) => (h.id === id ? { ...h, completed: nextCompleted } : h)));
+
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) {
+        throw new Error('No authenticated user found');
+      }
+
+      const today = getTodayDate();
+
+      if (nextCompleted) {
+        const { data: existingRows, error: existingError } = await supabase
+          .from('habit_completions')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('habit_id', id)
+          .eq('completed_date', today)
+          .limit(1);
+
+        if (existingError) {
+          throw existingError;
+        }
+
+        if (!existingRows || existingRows.length === 0) {
+          const { error: insertError } = await supabase.from('habit_completions').insert({
+            user_id: user.id,
+            habit_id: id,
+            completed_date: today,
+          });
+
+          if (insertError) {
+            throw insertError;
+          }
+        }
+      } else {
+        const { error: deleteError } = await supabase
+          .from('habit_completions')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('habit_id', id)
+          .eq('completed_date', today);
+
+        if (deleteError) {
+          throw deleteError;
+        }
+      }
+    } catch (toggleError) {
+      console.error('Error updating completion:', toggleError);
+      setHabits((prev) =>
+        prev.map((h) => (h.id === id ? { ...h, completed: previousCompleted } : h)),
+      );
+    } finally {
+      if (habit && !habit.completed) {
+        setShowFireworks(true);
+        setAnimationLoopCounter(0);
+      }
     }
   };
 
