@@ -1,11 +1,39 @@
 import React, { useEffect, useState } from 'react';
-import { Text, StyleSheet, View } from 'react-native';
+import { Text, StyleSheet, View, ActivityIndicator, SectionList } from 'react-native';
 
 import { supabase } from '../lib/supabase';
 import { Colors } from '../constants/colors';
+import { HabitCard } from '../components/HabitCard';
+import { Habit } from '../lib/models/habits';
+
+interface HabitWithCompletion extends Habit {
+  completed: boolean;
+}
 
 export default function HomeScreen() {
   const [fullName, setFullName] = useState('');
+  const [habits, setHabits] = useState<HabitWithCompletion[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchHabits = async (userId: string) => {
+    const { data, error } = await supabase
+      .from('habits')
+      .select('id, name, trigger, goal_type, goal_value, fallback, created_at, is_active')
+      .eq('user_id', userId)
+      .eq('is_active', true);
+
+    if (error) {
+      console.error('Error fetching habits:', error);
+      return;
+    }
+
+    const formatted: HabitWithCompletion[] = (data ?? []).map((habit) => ({
+      ...habit,
+      completed: false, // 👈 force default
+    }));
+
+    setHabits(formatted);
+  };
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -28,8 +56,28 @@ export default function HomeScreen() {
       }
     };
 
+    const load = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) return;
+
+      await fetchHabits(user.id);
+      setLoading(false);
+    };
+
+    load();
     fetchProfile();
   }, []);
+
+  const handleToggle = (id: string) => {
+    setHabits((prev) => prev.map((h) => (h.id === id ? { ...h, completed: !h.completed } : h)));
+    const habit = habits.find((h) => h.id === id);
+  };
+
+  const activeHabits = habits.filter((h) => !h.completed);
+  const completedHabits = habits.filter((h) => h.completed);
 
   return (
     <View style={styles.container}>
@@ -37,6 +85,55 @@ export default function HomeScreen() {
 
       <Text style={styles.subtitle}>This is your home page</Text>
       <Text style={styles.subtitle}>🚧 More features coming soon 🚧</Text>
+      <View style={styles.habitsContainer}>
+        {loading ? <ActivityIndicator size="large" color={Colors.primaryGreen} /> : null}
+
+        {!loading && habits.length > 0 && (
+          // <FlatList
+          //   data={habits}
+          //   keyExtractor={(item) => item.id}
+          //   renderItem={({ item }) => (
+          // <HabitCard
+          //   id={item.id}
+          //   name={item.name}
+          //   type={item.goal_type}
+          //   fallback={item.fallback}
+          //   goal={item.goal_value}
+          //   completed={item.completed}
+          //   onToggle={handleToggle}
+          // />
+          //   )}
+          //   contentContainerStyle={{}}
+          // />
+          <SectionList
+            sections={[
+              { title: 'Active', data: activeHabits },
+              { title: 'Completed', data: completedHabits },
+            ]}
+            renderItem={({ item }) => (
+              <HabitCard
+                id={item.id}
+                name={item.name}
+                type={item.goal_type}
+                fallback={item.fallback}
+                goal={item.goal_value}
+                completed={item.completed}
+                onToggle={handleToggle}
+              />
+            )}
+            renderSectionHeader={({ section }) => (
+              <Text style={styles.sectionTitle}>{section.title}</Text>
+            )}
+          />
+        )}
+
+        {!loading && habits.length === 0 && (
+          <View style={styles.center}>
+            <Text style={styles.subtitle}>💤 No habits yet 💤</Text>
+            <Text style={styles.subtitle}>Add your first habit to get started</Text>
+          </View>
+        )}
+      </View>
     </View>
   );
 }
@@ -59,5 +156,23 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: Colors.textMedium,
     textAlign: 'center',
+  },
+  habitsContainer: {
+    flex: 1,
+    padding: 16,
+    width: '100%',
+  },
+  center: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  sectionTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: Colors.textMedium,
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+    marginBottom: 10,
   },
 });
