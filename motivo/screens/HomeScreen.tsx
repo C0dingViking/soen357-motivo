@@ -1,10 +1,12 @@
-import React, { useEffect, useState } from 'react';
-import { Text, StyleSheet, View, ActivityIndicator, SectionList } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { Text, StyleSheet, View, SectionList } from 'react-native';
+import LottieView from 'lottie-react-native';
 
 import { supabase } from '../lib/supabase';
 import { Colors } from '../constants/colors';
 import { HabitCard } from '../components/HabitCard';
 import { Habit } from '../lib/models/habits';
+import { ProgressCard } from '../components/ProgressCard';
 
 interface HabitWithCompletion extends Habit {
   completed: boolean;
@@ -14,6 +16,8 @@ export default function HomeScreen() {
   const [fullName, setFullName] = useState('');
   const [habits, setHabits] = useState<HabitWithCompletion[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showFireworks, setShowFireworks] = useState(true);
+  const [animationLoopCounter, setAnimationLoopCounter] = useState(0);
 
   const fetchHabits = async (userId: string) => {
     const { data, error } = await supabase
@@ -29,7 +33,7 @@ export default function HomeScreen() {
 
     const formatted: HabitWithCompletion[] = (data ?? []).map((habit) => ({
       ...habit,
-      completed: false, // 👈 force default
+      completed: false,
     }));
 
     setHabits(formatted);
@@ -74,66 +78,72 @@ export default function HomeScreen() {
   const handleToggle = (id: string) => {
     setHabits((prev) => prev.map((h) => (h.id === id ? { ...h, completed: !h.completed } : h)));
     const habit = habits.find((h) => h.id === id);
+
+    if (habit && !habit.completed) {
+      setShowFireworks(true);
+      setAnimationLoopCounter(0);
+    }
   };
 
   const activeHabits = habits.filter((h) => !h.completed);
   const completedHabits = habits.filter((h) => h.completed);
 
+  const isAllCompleted = habits.length > 0 && completedHabits.length === habits.length;
+
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Welcome{fullName ? `, ${fullName}` : 'John Doe'}</Text>
+      <View style={styles.progressWrapper}>
+        {isAllCompleted && showFireworks && animationLoopCounter < 5 && (
+          <LottieView
+            key={animationLoopCounter}
+            source={require('../assets/lottie/Fireworks.json')}
+            autoPlay
+            loop={false}
+            style={styles.fireworks}
+            onAnimationFinish={() => {
+              setAnimationLoopCounter((prev) => {
+                const next = prev + 1;
 
-      <Text style={styles.subtitle}>This is your home page</Text>
-      <Text style={styles.subtitle}>🚧 More features coming soon 🚧</Text>
-      <View style={styles.habitsContainer}>
-        {loading ? <ActivityIndicator size="large" color={Colors.primaryGreen} /> : null}
+                if (next >= 3) {
+                  setShowFireworks(false);
+                }
 
-        {!loading && habits.length > 0 && (
-          // <FlatList
-          //   data={habits}
-          //   keyExtractor={(item) => item.id}
-          //   renderItem={({ item }) => (
-          // <HabitCard
-          //   id={item.id}
-          //   name={item.name}
-          //   type={item.goal_type}
-          //   fallback={item.fallback}
-          //   goal={item.goal_value}
-          //   completed={item.completed}
-          //   onToggle={handleToggle}
-          // />
-          //   )}
-          //   contentContainerStyle={{}}
-          // />
-          <SectionList
-            sections={[
-              { title: 'Active', data: activeHabits },
-              { title: 'Completed', data: completedHabits },
-            ]}
-            renderItem={({ item }) => (
-              <HabitCard
-                id={item.id}
-                name={item.name}
-                type={item.goal_type}
-                fallback={item.fallback}
-                goal={item.goal_value}
-                completed={item.completed}
-                onToggle={handleToggle}
-              />
-            )}
-            renderSectionHeader={({ section }) => (
-              <Text style={styles.sectionTitle}>{section.title}</Text>
-            )}
+                return next;
+              });
+            }}
           />
         )}
-
-        {!loading && habits.length === 0 && (
-          <View style={styles.center}>
-            <Text style={styles.subtitle}>💤 No habits yet 💤</Text>
-            <Text style={styles.subtitle}>Add your first habit to get started</Text>
-          </View>
-        )}
+        <ProgressCard nbCompletedHabits={completedHabits.length} nbTotalHabits={habits.length} />
       </View>
+      {!loading && habits.length > 0 && (
+        <SectionList
+          sections={[
+            { title: 'Active', data: activeHabits },
+            { title: 'Completed', data: completedHabits },
+          ]}
+          renderItem={({ item }) => (
+            <HabitCard
+              id={item.id}
+              name={item.name}
+              type={item.goal_type}
+              fallback={item.fallback}
+              goal={item.goal_value}
+              completed={item.completed}
+              onToggle={handleToggle}
+            />
+          )}
+          renderSectionHeader={({ section }) => (
+            <Text style={styles.sectionTitle}>{section.title}</Text>
+          )}
+        />
+      )}
+
+      {!loading && habits.length === 0 && (
+        <View style={styles.center}>
+          <Text style={styles.subtitle}>💤 No habits yet 💤</Text>
+          <Text style={styles.subtitle}>Add your first habit to get started</Text>
+        </View>
+      )}
     </View>
   );
 }
@@ -141,9 +151,24 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    flexDirection: 'column',
+    gap: 20,
     backgroundColor: Colors.background,
     alignItems: 'center',
     padding: 20,
+  },
+  progressWrapper: {
+    width: '100%',
+    position: 'relative',
+    alignItems: 'center',
+  },
+  fireworks: {
+    position: 'absolute',
+    top: -70,
+    width: 220,
+    height: 220,
+    zIndex: 10,
+    pointerEvents: 'none',
   },
   title: {
     fontSize: 26,

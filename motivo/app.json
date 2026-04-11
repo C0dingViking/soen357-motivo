@@ -33,7 +33,8 @@
         {
           "enforceContrast": false
         }
-      ]
+      ],
+      "expo-build-properties"
     ]
   }
 }
