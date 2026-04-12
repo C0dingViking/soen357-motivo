@@ -7,4 +7,5 @@ export const Colors = {
   strongAccent: '#FFC857',
   softAccent: '#FDE8D2',
   errorRed: '#E63946',
+  daySelectorBackground: '#F2F7F3',
 };

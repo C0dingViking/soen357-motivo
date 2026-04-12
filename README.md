@@ -57,6 +57,14 @@ cd soen357-motivo/motivo
 npm install
 ```
 
+#### 2.1 Set Up the `.env` file
+
+Since Supabase is used as a backend and an anonymous key is needed to establish a connection to the service, a `.env` file providing the required values is needed.
+
+For safety. the `.env` file will be shared with the final report. This shared file should be added next to the `motivo/.env.example` file.
+
+Alternatively, the `.example` extension of the `motivo/.env.example` file can be removed and the example values can be changed to the ones provided with the final report.
+
 ### 3. Start the Development Server
 
 ```bash

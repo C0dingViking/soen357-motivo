@@ -1,18 +1,29 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { Text, StyleSheet, View, SectionList } from 'react-native';
+import React, { use, useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, Text, StyleSheet, View, SectionList } from 'react-native';
 import LottieView from 'lottie-react-native';
+import { Toast } from 'rn-inkpad';
 
 import { supabase } from '../lib/supabase';
 import { Colors } from '../constants/colors';
 import { HabitCard } from '../components/HabitCard';
 import { Habit } from '../lib/models/habits';
 import { ProgressCard } from '../components/ProgressCard';
+import { DaySelector } from '../components/DaySelector';
+import { withOpacity } from '../utils/colors';
 
 interface HabitWithCompletion extends Habit {
   completed: boolean;
 }
 
-const getTodayDate = () => new Date().toISOString().split('T')[0];
+const formatDate = (date: Date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+
+  return `${year}-${month}-${day}`;
+};
+
+const getTodayDate = () => formatDate(new Date());
 
 export default function HomeScreen() {
   const [fullName, setFullName] = useState('');
@@ -20,6 +31,11 @@ export default function HomeScreen() {
   const [loading, setLoading] = useState(true);
   const [showFireworks, setShowFireworks] = useState(true);
   const [animationLoopCounter, setAnimationLoopCounter] = useState(0);
+  const [selectedDate, setSelectedDate] = useState(getTodayDate());
+  const [userId, setUserId] = useState<string | null>(null);
+  const [reloadTrigger, setReloadTrigger] = useState(0);
+  const [showErrorToast, setShowErrorToast] = useState(false);
+  const [errorToastMessage, setErrorToastMessage] = useState('');
 
   const fetchHabits = async (userId: string) => {
     const { data, error } = await supabase
@@ -28,12 +44,14 @@ export default function HomeScreen() {
       .eq('user_id', userId)
       .eq('is_active', true);
 
+    setUserId(userId);
+
     if (error) {
       console.error('Error fetching habits:', error);
       return;
     }
 
-    const today = getTodayDate();
+    const today = selectedDate;
     const { data: completionData, error: completionError } = await supabase
       .from('habit_completions')
       .select('habit_id')
@@ -64,8 +82,6 @@ export default function HomeScreen() {
 
       const userId = session?.user.id;
 
-      if (!userId) return;
-
       const { data, error } = await supabase
         .from('profiles')
         .select('full_name')
@@ -92,7 +108,31 @@ export default function HomeScreen() {
     fetchProfile();
   }, []);
 
+  useEffect(() => {
+    if (!userId) return;
+    const load = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) return;
+
+      await fetchHabits(user.id);
+      setLoading(false);
+    };
+
+    load();
+  }, [selectedDate]);
+
   const handleToggle = async (id: string) => {
+    var today = formatDate(new Date());
+
+    if (selectedDate > today) {
+      setErrorToastMessage("You can't complete a habit for a future date.");
+      setShowErrorToast(true);
+      return;
+    }
+
     const habit = habits.find((h) => h.id === id);
     if (!habit) return;
 
@@ -110,7 +150,7 @@ export default function HomeScreen() {
         throw new Error('No authenticated user found');
       }
 
-      const today = getTodayDate();
+      today = selectedDate;
 
       if (nextCompleted) {
         const { data: existingRows, error: existingError } = await supabase
@@ -158,6 +198,7 @@ export default function HomeScreen() {
         setShowFireworks(true);
         setAnimationLoopCounter(0);
       }
+      setReloadTrigger((prev) => prev + 1);
     }
   };
 
@@ -167,60 +208,77 @@ export default function HomeScreen() {
   const isAllCompleted = habits.length > 0 && completedHabits.length === habits.length;
 
   return (
-    <View style={styles.container}>
-      <View style={styles.progressWrapper}>
-        {isAllCompleted && showFireworks && animationLoopCounter < 5 && (
-          <LottieView
-            key={animationLoopCounter}
-            source={require('../assets/lottie/Fireworks.json')}
-            autoPlay
-            loop={false}
-            style={styles.fireworks}
-            onAnimationFinish={() => {
-              setAnimationLoopCounter((prev) => {
-                const next = prev + 1;
+    <>
+      <View style={styles.container}>
+        <View style={styles.progressWrapper}>
+          {isAllCompleted && showFireworks && animationLoopCounter < 5 && (
+            <LottieView
+              key={animationLoopCounter}
+              source={require('../assets/lottie/Fireworks.json')}
+              autoPlay
+              loop={false}
+              style={styles.fireworks}
+              onAnimationFinish={() => {
+                setAnimationLoopCounter((prev) => {
+                  const next = prev + 1;
 
-                if (next >= 3) {
-                  setShowFireworks(false);
-                }
+                  if (next >= 3) {
+                    setShowFireworks(false);
+                  }
 
-                return next;
-              });
-            }}
-          />
-        )}
-        <ProgressCard nbCompletedHabits={completedHabits.length} nbTotalHabits={habits.length} />
-      </View>
-      {!loading && habits.length > 0 && (
-        <SectionList
-          sections={[
-            { title: 'Active', data: activeHabits },
-            { title: 'Completed', data: completedHabits },
-          ]}
-          renderItem={({ item }) => (
-            <HabitCard
-              id={item.id}
-              name={item.name}
-              type={item.goal_type}
-              fallback={item.fallback}
-              goal={item.goal_value}
-              completed={item.completed}
-              onToggle={handleToggle}
+                  return next;
+                });
+              }}
             />
           )}
-          renderSectionHeader={({ section }) => (
-            <Text style={styles.sectionTitle}>{section.title}</Text>
-          )}
-        />
-      )}
-
-      {!loading && habits.length === 0 && (
-        <View style={styles.center}>
-          <Text style={styles.subtitle}>💤 No habits yet 💤</Text>
-          <Text style={styles.subtitle}>Add your first habit to get started</Text>
+          <ProgressCard nbCompletedHabits={completedHabits.length} nbTotalHabits={habits.length} />
         </View>
-      )}
-    </View>
+        <DaySelector
+          onDateChange={setSelectedDate}
+          userId={userId || ''}
+          reloadTrigger={reloadTrigger}
+        />
+        {loading ? <ActivityIndicator size="large" color={Colors.primaryGreen} /> : null}
+        {!loading && habits.length > 0 && (
+          <SectionList
+            sections={[
+              { title: 'Active', data: activeHabits },
+              { title: 'Completed', data: completedHabits },
+            ]}
+            renderItem={({ item }) => (
+              <HabitCard
+                id={item.id}
+                name={item.name}
+                type={item.goal_type}
+                fallback={item.fallback}
+                goal={item.goal_value}
+                completed={item.completed}
+                onToggle={handleToggle}
+              />
+            )}
+            renderSectionHeader={({ section }) => (
+              <Text style={styles.sectionTitle}>{section.title}</Text>
+            )}
+          />
+        )}
+
+        {!loading && habits.length === 0 && (
+          <View style={styles.center}>
+            <Text style={styles.subtitle}>💤 No habits yet 💤</Text>
+            <Text style={styles.subtitle}>Add your first habit to get started</Text>
+          </View>
+        )}
+        <Toast
+          text={errorToastMessage}
+          visible={showErrorToast}
+          setVisible={setShowErrorToast}
+          position="bottom"
+          bottom={50}
+          backgroundColor={withOpacity(Colors.errorRed, 0.85)}
+          icon="alert-circle-outline"
+        />
+      </View>
+    </>
   );
 }
 
