@@ -14,6 +14,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Colors } from '../constants/colors';
 import { Habit } from '../lib/models/habits';
 import { fetchUserHabits, deleteHabit as deleteHabitFromDb } from '../lib/habitOperations';
+import { recalculateAndPersistStreakForCurrentUser } from '../lib/streakOperations';
 import { HabitCard } from '../components/HabitCard';
 import AddButton from '../components/buttons/AddButton';
 import type { ManageStackParamList } from '../navigation/types';
@@ -46,6 +47,13 @@ export default function ManageHabitsScreen() {
       Alert.alert('Error', error);
       return;
     }
+
+    try {
+      await recalculateAndPersistStreakForCurrentUser();
+    } catch (streakError) {
+      console.error('Error recalculating streak after delete:', streakError);
+    }
+
     setHabits((prev) => prev.filter((habit) => habit.id !== habitId));
   }, []);
 

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Text, StyleSheet, View, SectionList } from 'react-native';
 import LottieView from 'lottie-react-native';
 import { Toast } from 'rn-inkpad';
+import { useFocusEffect } from '@react-navigation/native';
 
 import { supabase } from '../lib/supabase';
 import { fetchUserHabits } from '../lib/habitOperations';
@@ -11,6 +12,7 @@ import { Habit } from '../lib/models/habits';
 import { ProgressCard } from '../components/ProgressCard';
 import { DaySelector } from '../components/DaySelector';
 import { withOpacity } from '../utils/colors';
+import { recalculateAndPersistStreak } from '../lib/streakOperations';
 
 interface HabitWithCompletion extends Habit {
   completed: boolean;
@@ -97,6 +99,17 @@ export default function HomeScreen() {
     load();
   }, [selectedDate, userId]);
 
+  useFocusEffect(
+    React.useCallback(() => {
+      if (!userId) {
+        return;
+      }
+
+      fetchHabits(userId);
+      setReloadTrigger((prev) => prev + 1);
+    }, [selectedDate, userId]),
+  );
+
   const handleToggle = async (id: string) => {
     var today = formatDate(new Date());
 
@@ -161,6 +174,8 @@ export default function HomeScreen() {
           throw deleteError;
         }
       }
+
+      await recalculateAndPersistStreak(user.id);
     } catch (toggleError) {
       console.error('Error updating completion:', toggleError);
       setHabits((prev) =>

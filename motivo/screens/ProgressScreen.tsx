@@ -157,7 +157,7 @@ export default function ProgressScreen() {
           </View>
 
           <View style={styles.statCardHalf}>
-            <Text style={styles.statLabel}>Longest streak</Text>
+            <Text style={styles.statLabel}>Current streak</Text>
             <Text style={styles.statValue}>{longestStreak}</Text>
           </View>
         </View>

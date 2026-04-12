@@ -18,6 +18,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Colors } from '../constants/colors';
 import type { GoalType } from '../lib/models/habits';
 import { createHabit, updateHabit, fetchUserHabits } from '../lib/habitOperations';
+import { recalculateAndPersistStreakForCurrentUser } from '../lib/streakOperations';
 import type { ManageStackParamList } from '../navigation/types';
 import BackButton from '../components/buttons/BackButton';
 import AddButton from '../components/buttons/AddButton';
@@ -196,6 +197,14 @@ export default function CreateHabitScreen({ navigation, route }: Props) {
     if (error) {
       Alert.alert('Error', error);
       return;
+    }
+
+    if (!isEditing) {
+      try {
+        await recalculateAndPersistStreakForCurrentUser();
+      } catch (streakError) {
+        console.error('Error recalculating streak after add:', streakError);
+      }
     }
 
     navigation.goBack();
