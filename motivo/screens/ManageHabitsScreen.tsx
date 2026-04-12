@@ -13,7 +13,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import { Colors } from '../constants/colors';
 import { Habit } from '../lib/models/habits';
-import { supabase } from '../lib/supabase';
+import { fetchUserHabits, deleteHabit as deleteHabitFromDb } from '../lib/habitOperations';
 import { HabitCard } from '../components/HabitCard';
 import AddButton from '../components/AddButton';
 import type { ManageStackParamList } from '../navigation/types';
@@ -25,39 +25,13 @@ export default function ManageHabitsScreen() {
 
   const loadHabits = useCallback(async () => {
     setLoading(true);
-
-    try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      if (!user) {
-        setHabits([]);
-        setLoading(false);
-        return;
-      }
-
-      const { data, error } = await supabase
-        .from('habits')
-        .select('id, name, trigger, goal_type, goal_value, fallback, created_at, is_active')
-        .eq('user_id', user.id)
-        .eq('is_active', true)
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        console.error('Error loading habits:', error);
-        setHabits([]);
-        setLoading(false);
-        return;
-      }
-
-      setHabits((data ?? []) as Habit[]);
-    } catch (loadError) {
-      console.error('Error loading habits:', loadError);
+    const { data, error } = await fetchUserHabits();
+    if (error) {
       setHabits([]);
-    } finally {
-      setLoading(false);
+    } else {
+      setHabits((data as Habit[]) ?? []);
     }
+    setLoading(false);
   }, []);
 
   useFocusEffect(
@@ -67,32 +41,12 @@ export default function ManageHabitsScreen() {
   );
 
   const deleteHabit = useCallback(async (habitId: string) => {
-    try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      if (!user) {
-        return;
-      }
-
-      const { error } = await supabase
-        .from('habits')
-        .update({ is_active: false })
-        .eq('id', habitId)
-        .eq('user_id', user.id);
-
-      if (error) {
-        console.error('Error deleting habit:', error);
-        Alert.alert('Error', 'Could not delete the habit. Please try again.');
-        return;
-      }
-
-      setHabits((prev) => prev.filter((habit) => habit.id !== habitId));
-    } catch (deleteError) {
-      console.error('Error deleting habit:', deleteError);
-      Alert.alert('Error', 'Could not delete the habit. Please try again.');
+    const { error } = await deleteHabitFromDb(habitId);
+    if (error) {
+      Alert.alert('Error', error);
+      return;
     }
+    setHabits((prev) => prev.filter((habit) => habit.id !== habitId));
   }, []);
 
   const handleDeletePress = useCallback(

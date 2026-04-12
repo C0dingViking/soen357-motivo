@@ -13,7 +13,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 import { Colors } from '../constants/colors';
 import type { GoalType } from '../lib/models/habits';
-import { supabase } from '../lib/supabase';
+import { createHabit } from '../lib/habitOperations';
 import type { ManageStackParamList } from '../navigation/types';
 import BackButton from '../components/BackButton';
 import AddButton from '../components/AddButton';
@@ -86,39 +86,22 @@ export default function CreateHabitScreen({ navigation }: Props) {
 
     setSubmitting(true);
 
-    try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+    const { error } = await createHabit({
+      name: trimmedName,
+      trigger: trigger.trim() || null,
+      goalType,
+      goalValue,
+      fallbackValue,
+    });
 
-      if (!user) {
-        Alert.alert('Error', 'You must be logged in to create a habit.');
-        return;
-      }
+    setSubmitting(false);
 
-      const { error } = await supabase.from('habits').insert({
-        user_id: user.id,
-        name: trimmedName,
-        trigger: trigger.trim() || null,
-        goal_type: goalType,
-        goal_value: goalValue,
-        fallback: fallbackValue,
-        is_active: true,
-      });
-
-      if (error) {
-        console.error('Error creating habit:', error);
-        Alert.alert('Error', 'Could not create habit. Please try again.');
-        return;
-      }
-
-      navigation.goBack();
-    } catch (createError) {
-      console.error('Error creating habit:', createError);
-      Alert.alert('Error', 'Could not create habit. Please try again.');
-    } finally {
-      setSubmitting(false);
+    if (error) {
+      Alert.alert('Error', error);
+      return;
     }
+
+    navigation.goBack();
   };
 
   const goalTypes: GoalType[] = ['time', 'count', 'custom'];
