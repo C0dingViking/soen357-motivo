@@ -15,65 +15,6 @@ import { Habit } from '../lib/models/habits';
 import { supabase } from '../lib/supabase';
 import { HabitCard } from '../components/HabitCard';
 
-type GoalDisplay = {
-  value: string;
-  label: string;
-};
-
-const formatTimeUnit = (minutes: number): GoalDisplay => {
-  if (minutes >= 60 && minutes % 60 === 0) {
-    const hours = minutes / 60;
-    return { value: String(hours), label: hours === 1 ? 'hour' : 'hours' };
-  }
-
-  return { value: String(minutes), label: 'min' };
-};
-
-const getGoalDisplay = (habit: Habit): GoalDisplay => {
-  if (habit.goal_type === 'time') {
-    const timeValue = Number(habit.goal_value?.time ?? 0);
-    return formatTimeUnit(Number.isFinite(timeValue) ? timeValue : 0);
-  }
-
-  if (habit.goal_type === 'count') {
-    const count = Number(habit.goal_value?.count ?? 0);
-    return {
-      value: String(Number.isFinite(count) ? count : 0),
-      label: count === 1 ? 'time' : 'times',
-    };
-  }
-
-  return {
-    value: String(habit.goal_value?.custom ?? '-'),
-    label: '',
-  };
-};
-
-const getCopingPlan = (habit: Habit): string => {
-  if (habit.goal_type === 'time') {
-    const fallbackMinutes = Number(habit.fallback?.time);
-
-    if (Number.isFinite(fallbackMinutes)) {
-      const time = formatTimeUnit(fallbackMinutes);
-      return `${time.value} ${time.label}`;
-    }
-  }
-
-  if (habit.goal_type === 'count') {
-    const fallbackCount = Number(habit.fallback?.count);
-
-    if (Number.isFinite(fallbackCount)) {
-      return `${fallbackCount} ${fallbackCount === 1 ? 'time' : 'times'}`;
-    }
-  }
-
-  if (habit.goal_type === 'custom' && habit.fallback?.custom) {
-    return String(habit.fallback.custom);
-  }
-
-  return 'Not set';
-};
-
 export default function ManageHabitsScreen() {
   const [habits, setHabits] = useState<Habit[]>([]);
   const [loading, setLoading] = useState(true);
