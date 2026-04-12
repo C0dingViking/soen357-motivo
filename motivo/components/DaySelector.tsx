@@ -181,7 +181,7 @@ const styles = StyleSheet.create({
   container: {
     borderRadius: 20,
     overflow: 'hidden',
-    backgroundColor: '#F2F7F3',
+    backgroundColor: Colors.daySelectorBackground,
     maxHeight: 80,
   },
   content: {
@@ -197,7 +197,7 @@ const styles = StyleSheet.create({
     width: ITEM_SIZE,
     height: ITEM_SIZE,
     borderRadius: ITEM_SIZE / 2,
-    backgroundColor: '#F2F7F3',
+    backgroundColor: Colors.daySelectorBackground,
     justifyContent: 'center',
     alignItems: 'center',
     flexDirection: 'column',
