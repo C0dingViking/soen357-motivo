@@ -4,6 +4,7 @@ import LottieView from 'lottie-react-native';
 import { Toast } from 'rn-inkpad';
 
 import { supabase } from '../lib/supabase';
+import { fetchUserHabits } from '../lib/habitOperations';
 import { Colors } from '../constants/colors';
 import { HabitCard } from '../components/HabitCard';
 import { Habit } from '../lib/models/habits';
@@ -26,7 +27,6 @@ const formatDate = (date: Date) => {
 const getTodayDate = () => formatDate(new Date());
 
 export default function HomeScreen() {
-  const [fullName, setFullName] = useState('');
   const [habits, setHabits] = useState<HabitWithCompletion[]>([]);
   const [loading, setLoading] = useState(true);
   const [showFireworks, setShowFireworks] = useState(true);
@@ -40,11 +40,7 @@ export default function HomeScreen() {
   const fetchHabits = async (userId: string) => {
     setLoading(true);
 
-    const { data, error } = await supabase
-      .from('habits')
-      .select('id, name, trigger, goal_type, goal_value, fallback, created_at, is_active')
-      .eq('user_id', userId)
-      .eq('is_active', true);
+    const { data, error } = await fetchUserHabits();
 
     setUserId(userId);
 
@@ -79,24 +75,6 @@ export default function HomeScreen() {
   };
 
   useEffect(() => {
-    const fetchProfile = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-
-      const userId = session?.user.id;
-
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('full_name')
-        .eq('id', userId)
-        .single();
-
-      if (!error && data) {
-        setFullName(data.full_name);
-      }
-    };
-
     const load = async () => {
       const {
         data: { user },
@@ -108,7 +86,6 @@ export default function HomeScreen() {
     };
 
     load();
-    fetchProfile();
   }, []);
 
   useEffect(() => {
@@ -309,22 +286,10 @@ const styles = StyleSheet.create({
     zIndex: 10,
     pointerEvents: 'none',
   },
-  title: {
-    fontSize: 26,
-    fontWeight: 'bold',
-    color: Colors.strongAccent,
-    marginBottom: 10,
-    textAlign: 'center',
-  },
   subtitle: {
     fontSize: 16,
     color: Colors.textMedium,
     textAlign: 'center',
-  },
-  habitsContainer: {
-    flex: 1,
-    padding: 16,
-    width: '100%',
   },
   center: {
     flex: 1,
