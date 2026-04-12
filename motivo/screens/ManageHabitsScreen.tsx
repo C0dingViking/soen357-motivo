@@ -80,18 +80,20 @@ export default function ManageHabitsScreen() {
           data={habits}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => (
-            <HabitCard
-              id={item.id}
-              name={item.name}
-              type={item.goal_type}
-              fallback={item.fallback}
-              goal={item.goal_value}
-              completed={false}
-              showCheckbox={false}
-              showDeleteButton
-              onDelete={handleDeletePress}
-              motivate={false}
-            />
+            <Pressable onPress={() => navigation.navigate('ManageDetails', { habitId: item.id })}>
+              <HabitCard
+                id={item.id}
+                name={item.name}
+                type={item.goal_type}
+                fallback={item.fallback}
+                goal={item.goal_value}
+                completed={false}
+                showCheckbox={false}
+                showDeleteButton
+                onDelete={handleDeletePress}
+                motivate={false}
+              />
+            </Pressable>
           )}
           contentContainerStyle={styles.listContent}
           style={styles.list}
@@ -104,7 +106,10 @@ export default function ManageHabitsScreen() {
         </View>
       )}
 
-      <AddButton onPress={() => navigation.navigate('ManageDetails')} style={styles.addButton} />
+      <AddButton
+        onPress={() => navigation.navigate('ManageDetails', {})}
+        style={styles.addButton}
+      />
     </View>
   );
 }

@@ -14,5 +14,5 @@ export type MainTabParamList = {
 
 export type ManageStackParamList = {
   Manage: undefined;
-  ManageDetails: undefined;
+  ManageDetails: { habitId?: string };
 };

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import {
   Alert,
   KeyboardAvoidingView,
@@ -13,20 +13,58 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 import { Colors } from '../constants/colors';
 import type { GoalType } from '../lib/models/habits';
-import { createHabit } from '../lib/habitOperations';
+import { createHabit, updateHabit, fetchUserHabits } from '../lib/habitOperations';
 import type { ManageStackParamList } from '../navigation/types';
 import BackButton from '../components/BackButton';
 import AddButton from '../components/AddButton';
 
 type Props = NativeStackScreenProps<ManageStackParamList, 'ManageDetails'>;
 
-export default function CreateHabitScreen({ navigation }: Props) {
+export default function CreateHabitScreen({ navigation, route }: Props) {
+  const habitId = route.params?.habitId;
+  const isEditing = !!habitId;
+
   const [name, setName] = useState('');
   const [trigger, setTrigger] = useState('');
   const [goalType, setGoalType] = useState<GoalType>('time');
   const [goalInput, setGoalInput] = useState('');
   const [fallbackInput, setFallbackInput] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [loading, setLoading] = useState(isEditing);
+
+  useEffect(() => {
+    if (isEditing && habitId) {
+      loadHabitData();
+    }
+  }, [habitId, isEditing]);
+
+  const loadHabitData = async () => {
+    setLoading(true);
+    const { data, error } = await fetchUserHabits();
+    if (error || !data) {
+      Alert.alert('Error', 'Could not load habit details');
+      setLoading(false);
+      return;
+    }
+
+    const habit = (data as any[]).find((h) => h.id === habitId);
+    if (habit) {
+      setName(habit.name);
+      setTrigger(habit.trigger || '');
+      setGoalType(habit.goal_type);
+
+      const goalValue = habit.goal_value;
+      if (goalValue?.time) setGoalInput(String(goalValue.time));
+      else if (goalValue?.count) setGoalInput(String(goalValue.count));
+      else if (goalValue?.custom) setGoalInput(goalValue.custom);
+
+      const fallbackValue = habit.fallback;
+      if (fallbackValue?.time) setFallbackInput(String(fallbackValue.time));
+      else if (fallbackValue?.count) setFallbackInput(String(fallbackValue.count));
+      else if (fallbackValue?.custom) setFallbackInput(fallbackValue.custom);
+    }
+    setLoading(false);
+  };
 
   const unitLabel = useMemo(() => {
     if (goalType === 'time') return 'min';
@@ -64,6 +102,18 @@ export default function CreateHabitScreen({ navigation }: Props) {
     return { count: numeric };
   };
 
+  const getNumericValue = (value: Record<string, unknown> | null): number | null => {
+    if (!value || goalType === 'custom') return null;
+
+    if (goalType === 'time') {
+      const time = value.time;
+      return typeof time === 'number' ? time : null;
+    }
+
+    const count = value.count;
+    return typeof count === 'number' ? count : null;
+  };
+
   const handleAddHabit = async () => {
     const trimmedName = name.trim();
 
@@ -84,15 +134,35 @@ export default function CreateHabitScreen({ navigation }: Props) {
       return;
     }
 
+    if (goalType !== 'custom' && fallbackValue) {
+      const goalNumeric = getNumericValue(goalValue);
+      const fallbackNumeric = getNumericValue(fallbackValue);
+
+      if (goalNumeric !== null && fallbackNumeric !== null && fallbackNumeric >= goalNumeric) {
+        Alert.alert('Validation', `Fallback must be less than goal (${unitLabel}).`);
+        return;
+      }
+    }
+
     setSubmitting(true);
 
-    const { error } = await createHabit({
+    const habitData = {
       name: trimmedName,
       trigger: trigger.trim() || null,
       goalType,
       goalValue,
       fallbackValue,
-    });
+    };
+
+    let error: string | undefined;
+
+    if (isEditing && habitId) {
+      const result = await updateHabit(habitId, habitData);
+      error = result.error;
+    } else {
+      const result = await createHabit(habitData);
+      error = result.error;
+    }
 
     setSubmitting(false);
 
@@ -192,9 +262,11 @@ export default function CreateHabitScreen({ navigation }: Props) {
       </View>
 
       <AddButton
-        label={submitting ? 'Adding...' : 'Add'}
+        label={
+          submitting ? (isEditing ? 'Updating...' : 'Adding...') : isEditing ? 'Update' : 'Add'
+        }
         onPress={handleAddHabit}
-        disabled={submitting}
+        disabled={submitting || loading}
         style={styles.addButton}
       />
     </KeyboardAvoidingView>

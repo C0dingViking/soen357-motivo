@@ -16,7 +16,7 @@ export const createHabit = async (input: CreateHabitInput): Promise<{ error?: st
     } = await supabase.auth.getUser();
 
     if (!user) {
-      return { error: 'You must be logged in to create a habit.' };
+      return { error: 'User not authenticated' };
     }
 
     const { error } = await supabase.from('habits').insert({
@@ -95,5 +95,42 @@ export const deleteHabit = async (habitId: string): Promise<{ error?: string }> 
   } catch (deleteError) {
     console.error('Error deleting habit:', deleteError);
     return { error: 'Could not delete the habit. Please try again.' };
+  }
+};
+
+export const updateHabit = async (
+  habitId: string,
+  input: CreateHabitInput,
+): Promise<{ error?: string }> => {
+  try {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return { error: 'User not authenticated' };
+    }
+
+    const { error } = await supabase
+      .from('habits')
+      .update({
+        name: input.name,
+        trigger: input.trigger,
+        goal_type: input.goalType,
+        goal_value: input.goalValue,
+        fallback: input.fallbackValue,
+      })
+      .eq('id', habitId)
+      .eq('user_id', user.id);
+
+    if (error) {
+      console.error('Error updating habit:', error);
+      return { error: 'Could not update habit. Please try again.' };
+    }
+
+    return {};
+  } catch (updateError) {
+    console.error('Error updating habit:', updateError);
+    return { error: 'Could not update habit. Please try again.' };
   }
 };
