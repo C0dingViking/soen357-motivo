@@ -20,7 +20,11 @@ type HabitCardProps = {
   fallback?: Record<string, any> | null;
   goal?: Record<string, any> | null;
   completed: boolean;
-  onToggle: (id: string) => void;
+  onToggle?: (id: string) => void;
+  showCheckbox?: boolean;
+  showDeleteButton?: boolean;
+  onDelete?: (id: string) => void;
+  motivate?: boolean;
 };
 
 export const HabitCard = ({
@@ -31,6 +35,10 @@ export const HabitCard = ({
   fallback,
   completed,
   onToggle,
+  showCheckbox = true,
+  showDeleteButton = false,
+  onDelete,
+  motivate = true,
 }: HabitCardProps) => {
   const prefix = useMemo(() => {
     const i = Math.floor(Math.random() * MOTIVATION_PREFIXES.length);
@@ -56,19 +64,25 @@ export const HabitCard = ({
       ? `${prefix} \n\tTry: ${fallbackText}`
       : '';
 
+  const copingPlan = fallbackText ? `Coping Plan: ${fallbackText}` : '';
+
   return (
     <View style={styles.card}>
       <View style={styles.leftSection}>
-        <Pressable
-          onPress={() => onToggle(id)}
-          style={[styles.checkbox, completed && styles.checkboxChecked]}
-        >
-          {completed && <Text style={styles.checkmark}>✓</Text>}
-        </Pressable>
+        {showCheckbox && (
+          <Pressable
+            onPress={() => onToggle?.(id)}
+            style={[styles.checkbox, completed && styles.checkboxChecked]}
+          >
+            {completed && <Text style={styles.checkmark}>✓</Text>}
+          </Pressable>
+        )}
 
         <View style={styles.textContainer}>
           <Text style={[styles.title, completed && styles.titleCompleted]}>{name}</Text>
-          {!!subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
+          {motivate
+            ? !!subtitle && <Text style={styles.subtitle}>{subtitle}</Text>
+            : !!copingPlan && <Text style={styles.subtitle}>{copingPlan}</Text>}
         </View>
       </View>
 
@@ -79,6 +93,12 @@ export const HabitCard = ({
           <Text style={styles.goalLabel}>{goalLabel}</Text>
         </View>
       </View>
+
+      {showDeleteButton && (
+        <Pressable style={styles.deleteButton} onPress={() => onDelete?.(id)}>
+          <Text style={styles.deleteIcon}>−</Text>
+        </Pressable>
+      )}
     </View>
   );
 };
@@ -160,5 +180,22 @@ const styles = StyleSheet.create({
   goalLabel: {
     fontSize: 12,
     color: Colors.textMedium,
+  },
+  deleteButton: {
+    position: 'absolute',
+    top: -8,
+    right: -8,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: Colors.strongAccent,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  deleteIcon: {
+    color: Colors.textDark,
+    fontSize: 16,
+    fontWeight: '700',
+    lineHeight: 16,
   },
 });
