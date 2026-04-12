@@ -1,4 +1,4 @@
-import React, { use, useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Text, StyleSheet, View, SectionList } from 'react-native';
 import LottieView from 'lottie-react-native';
 import { Toast } from 'rn-inkpad';
@@ -38,6 +38,8 @@ export default function HomeScreen() {
   const [errorToastMessage, setErrorToastMessage] = useState('');
 
   const fetchHabits = async (userId: string) => {
+    setLoading(true);
+
     const { data, error } = await supabase
       .from('habits')
       .select('id, name, trigger, goal_type, goal_value, fallback, created_at, is_active')
@@ -48,6 +50,7 @@ export default function HomeScreen() {
 
     if (error) {
       console.error('Error fetching habits:', error);
+      setLoading(false);
       return;
     }
 
@@ -72,6 +75,7 @@ export default function HomeScreen() {
     }));
 
     setHabits(formatted);
+    setLoading(false);
   };
 
   useEffect(() => {
@@ -101,7 +105,6 @@ export default function HomeScreen() {
       if (!user) return;
 
       await fetchHabits(user.id);
-      setLoading(false);
     };
 
     load();
@@ -111,18 +114,11 @@ export default function HomeScreen() {
   useEffect(() => {
     if (!userId) return;
     const load = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      if (!user) return;
-
-      await fetchHabits(user.id);
-      setLoading(false);
+      await fetchHabits(userId);
     };
 
     load();
-  }, [selectedDate]);
+  }, [selectedDate, userId]);
 
   const handleToggle = async (id: string) => {
     var today = formatDate(new Date());
@@ -202,10 +198,16 @@ export default function HomeScreen() {
     }
   };
 
-  const activeHabits = habits.filter((h) => !h.completed);
-  const completedHabits = habits.filter((h) => h.completed);
+  const visibleHabits = habits.filter((habit) => {
+    const createdDate = habit.created_at.slice(0, 10);
+    return createdDate <= selectedDate;
+  });
 
-  const isAllCompleted = habits.length > 0 && completedHabits.length === habits.length;
+  const activeHabits = visibleHabits.filter((h) => !h.completed);
+  const completedHabits = visibleHabits.filter((h) => h.completed);
+
+  const isAllCompleted =
+    visibleHabits.length > 0 && completedHabits.length === visibleHabits.length;
 
   return (
     <>
@@ -231,7 +233,10 @@ export default function HomeScreen() {
               }}
             />
           )}
-          <ProgressCard nbCompletedHabits={completedHabits.length} nbTotalHabits={habits.length} />
+          <ProgressCard
+            nbCompletedHabits={completedHabits.length}
+            nbTotalHabits={visibleHabits.length}
+          />
         </View>
         <DaySelector
           onDateChange={setSelectedDate}
@@ -239,7 +244,7 @@ export default function HomeScreen() {
           reloadTrigger={reloadTrigger}
         />
         {loading ? <ActivityIndicator size="large" color={Colors.primaryGreen} /> : null}
-        {!loading && habits.length > 0 && (
+        {!loading && visibleHabits.length > 0 && (
           <SectionList
             sections={[
               { title: 'Active', data: activeHabits },
@@ -262,7 +267,7 @@ export default function HomeScreen() {
           />
         )}
 
-        {!loading && habits.length === 0 && (
+        {!loading && visibleHabits.length === 0 && (
           <View style={styles.center}>
             <Text style={styles.subtitle}>💤 No habits yet 💤</Text>
             <Text style={styles.subtitle}>Add your first habit to get started</Text>
