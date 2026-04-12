@@ -13,6 +13,7 @@ import { ProgressCard } from '../components/ProgressCard';
 import { DaySelector } from '../components/DaySelector';
 import { withOpacity } from '../utils/colors';
 import { recalculateAndPersistStreak } from '../lib/streakOperations';
+import { notifyProfileRefresh } from '../lib/profileRefresh';
 
 interface HabitWithCompletion extends Habit {
   completed: boolean;
@@ -176,6 +177,7 @@ export default function HomeScreen() {
       }
 
       await recalculateAndPersistStreak(user.id);
+      notifyProfileRefresh();
     } catch (toggleError) {
       console.error('Error updating completion:', toggleError);
       setHabits((prev) =>

@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Colors } from '../constants/colors';
 import { supabase } from '../lib/supabase';
+import { subscribeProfileRefresh } from '../lib/profileRefresh';
 import logo from '../assets/logo_without_name.png';
 import { withOpacity } from '../utils/colors';
 import { Rank } from './Rank';
@@ -52,6 +53,14 @@ export default function Header() {
     };
 
     loadUser();
+
+    const unsubscribe = subscribeProfileRefresh(() => {
+      loadUser();
+    });
+
+    return () => {
+      unsubscribe();
+    };
   }, []);
 
   return (
