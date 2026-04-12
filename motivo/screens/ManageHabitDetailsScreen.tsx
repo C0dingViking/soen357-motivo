@@ -1,7 +1,10 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
 import {
   Alert,
+  Animated,
+  Easing,
   KeyboardAvoidingView,
+  LayoutChangeEvent,
   Platform,
   Pressable,
   StyleSheet,
@@ -23,6 +26,7 @@ type Props = NativeStackScreenProps<ManageStackParamList, 'ManageDetails'>;
 export default function CreateHabitScreen({ navigation, route }: Props) {
   const habitId = route.params?.habitId;
   const isEditing = !!habitId;
+  const goalTypes: GoalType[] = ['time', 'count', 'custom'];
 
   const [name, setName] = useState('');
   const [trigger, setTrigger] = useState('');
@@ -31,6 +35,15 @@ export default function CreateHabitScreen({ navigation, route }: Props) {
   const [fallbackInput, setFallbackInput] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [loading, setLoading] = useState(isEditing);
+  const [goalTypeRowWidth, setGoalTypeRowWidth] = useState(0);
+  const animatedGoalTypeX = useRef(new Animated.Value(0)).current;
+
+  const selectedGoalTypeIndex = goalTypes.indexOf(goalType);
+  const goalTypeSegmentWidth = goalTypeRowWidth ? (goalTypeRowWidth - 8) / goalTypes.length : 0;
+
+  const handleGoalTypeRowLayout = (event: LayoutChangeEvent) => {
+    setGoalTypeRowWidth(event.nativeEvent.layout.width);
+  };
 
   useEffect(() => {
     if (isEditing && habitId) {
@@ -65,6 +78,19 @@ export default function CreateHabitScreen({ navigation, route }: Props) {
     }
     setLoading(false);
   };
+
+  useEffect(() => {
+    if (!goalTypeSegmentWidth || selectedGoalTypeIndex < 0) {
+      return;
+    }
+
+    Animated.timing(animatedGoalTypeX, {
+      toValue: selectedGoalTypeIndex * goalTypeSegmentWidth,
+      duration: 160,
+      easing: Easing.out(Easing.linear),
+      useNativeDriver: true,
+    }).start();
+  }, [animatedGoalTypeX, goalTypeSegmentWidth, selectedGoalTypeIndex]);
 
   const unitLabel = useMemo(() => {
     if (goalType === 'time') return 'min';
@@ -174,8 +200,6 @@ export default function CreateHabitScreen({ navigation, route }: Props) {
     navigation.goBack();
   };
 
-  const goalTypes: GoalType[] = ['time', 'count', 'custom'];
-
   return (
     <KeyboardAvoidingView
       style={styles.container}
@@ -203,13 +227,22 @@ export default function CreateHabitScreen({ navigation, route }: Props) {
           placeholderTextColor={Colors.textMedium}
         />
 
-        <View style={styles.goalTypeRow}>
+        <View style={styles.goalTypeRow} onLayout={handleGoalTypeRowLayout}>
+          <Animated.View
+            pointerEvents="none"
+            style={[
+              styles.goalTypeIndicator,
+              {
+                width: goalTypeSegmentWidth,
+                transform: [{ translateX: animatedGoalTypeX }],
+              },
+            ]}
+          />
           {goalTypes.map((type) => {
-            const selected = goalType === type;
             return (
               <Pressable
                 key={type}
-                style={[styles.goalTypeChip, selected && styles.goalTypeChipSelected]}
+                style={styles.goalTypeChip}
                 onPress={() => {
                   setGoalType(type);
                   setGoalInput('');
@@ -286,6 +319,7 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 16,
+    fontWeight: 'bold',
     color: Colors.textDark,
     marginLeft: 5,
   },
@@ -312,6 +346,15 @@ const styles = StyleSheet.create({
     marginTop: 2,
     marginBottom: 10,
     marginHorizontal: 30,
+    overflow: 'hidden',
+  },
+  goalTypeIndicator: {
+    position: 'absolute',
+    top: 4,
+    bottom: 4,
+    left: 4,
+    borderRadius: 22,
+    backgroundColor: Colors.strongAccent,
   },
   goalTypeChip: {
     flex: 1,
@@ -319,9 +362,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  goalTypeChipSelected: {
-    backgroundColor: Colors.strongAccent,
+    zIndex: 1,
   },
   goalTypeText: {
     color: Colors.textDark,
