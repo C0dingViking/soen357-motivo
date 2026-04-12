@@ -15,7 +15,7 @@ import { Colors } from '../constants/colors';
 import { Habit } from '../lib/models/habits';
 import { fetchUserHabits, deleteHabit as deleteHabitFromDb } from '../lib/habitOperations';
 import { HabitCard } from '../components/HabitCard';
-import AddButton from '../components/AddButton';
+import AddButton from '../components/buttons/AddButton';
 import type { ManageStackParamList } from '../navigation/types';
 
 export default function ManageHabitsScreen() {

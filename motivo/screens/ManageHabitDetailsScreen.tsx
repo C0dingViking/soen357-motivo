@@ -7,6 +7,7 @@ import {
   LayoutChangeEvent,
   Platform,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -18,8 +19,8 @@ import { Colors } from '../constants/colors';
 import type { GoalType } from '../lib/models/habits';
 import { createHabit, updateHabit, fetchUserHabits } from '../lib/habitOperations';
 import type { ManageStackParamList } from '../navigation/types';
-import BackButton from '../components/BackButton';
-import AddButton from '../components/AddButton';
+import BackButton from '../components/buttons/BackButton';
+import AddButton from '../components/buttons/AddButton';
 
 type Props = NativeStackScreenProps<ManageStackParamList, 'ManageDetails'>;
 
@@ -202,106 +203,108 @@ export default function CreateHabitScreen({ navigation, route }: Props) {
 
   return (
     <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      style={{ flex: 1 }}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <BackButton onPress={() => navigation.goBack()} />
+      <ScrollView contentContainerStyle={{ flexGrow: 1 }} keyboardShouldPersistTaps="handled">
+        <BackButton onPress={() => navigation.goBack()} />
 
-      <View style={styles.form}>
-        <Text style={styles.label}>Habit name</Text>
-        <TextInput
-          value={name}
-          onChangeText={setName}
-          style={styles.input}
-          placeholderTextColor={Colors.textMedium}
-        />
-
-        <Text style={styles.label}>
-          Habit Trigger <Text style={styles.helperText}>(something you do already)</Text>
-        </Text>
-        <TextInput
-          value={trigger}
-          onChangeText={setTrigger}
-          style={styles.input}
-          placeholder=""
-          placeholderTextColor={Colors.textMedium}
-        />
-
-        <View style={styles.goalTypeRow} onLayout={handleGoalTypeRowLayout}>
-          <Animated.View
-            pointerEvents="none"
-            style={[
-              styles.goalTypeIndicator,
-              {
-                width: goalTypeSegmentWidth,
-                transform: [{ translateX: animatedGoalTypeX }],
-              },
-            ]}
+        <View style={styles.form}>
+          <Text style={styles.label}>Habit name</Text>
+          <TextInput
+            value={name}
+            onChangeText={setName}
+            style={styles.input}
+            placeholderTextColor={Colors.textMedium}
           />
-          {goalTypes.map((type) => {
-            return (
-              <Pressable
-                key={type}
-                style={styles.goalTypeChip}
-                onPress={() => {
-                  setGoalType(type);
-                  setGoalInput('');
-                  setFallbackInput('');
-                }}
-              >
-                <Text style={styles.goalTypeText}>
-                  {type.charAt(0).toUpperCase()}
-                  {type.slice(1)}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </View>
 
-        <View style={styles.goalFallbackRow}>
-          <View style={styles.goalFallbackItem}>
-            <Text style={styles.label}>Goal</Text>
-          </View>
+          <Text style={styles.label}>
+            Habit Trigger <Text style={styles.helperText}>(something you do already)</Text>
+          </Text>
+          <TextInput
+            value={trigger}
+            onChangeText={setTrigger}
+            style={styles.input}
+            placeholder=""
+            placeholderTextColor={Colors.textMedium}
+          />
 
-          <View style={styles.goalFallbackItem}>
-            <Text style={styles.label}>Fallback</Text>
-            <Text style={styles.helperText}>(make it a bit easier)</Text>
-          </View>
-        </View>
-
-        <View style={styles.goalFallbackRow}>
-          <View style={styles.goalFallbackItem}>
-            <TextInput
-              value={goalInput}
-              onChangeText={setGoalInput}
-              style={styles.smallInput}
-              keyboardType={goalType === 'custom' ? 'default' : 'numeric'}
-              placeholder={unitLabel}
-              placeholderTextColor={Colors.textMedium}
+          <View style={styles.goalTypeRow} onLayout={handleGoalTypeRowLayout}>
+            <Animated.View
+              pointerEvents="none"
+              style={[
+                styles.goalTypeIndicator,
+                {
+                  width: goalTypeSegmentWidth,
+                  transform: [{ translateX: animatedGoalTypeX }],
+                },
+              ]}
             />
+            {goalTypes.map((type) => {
+              return (
+                <Pressable
+                  key={type}
+                  style={styles.goalTypeChip}
+                  onPress={() => {
+                    setGoalType(type);
+                    setGoalInput('');
+                    setFallbackInput('');
+                  }}
+                >
+                  <Text style={styles.goalTypeText}>
+                    {type.charAt(0).toUpperCase()}
+                    {type.slice(1)}
+                  </Text>
+                </Pressable>
+              );
+            })}
           </View>
 
-          <View style={styles.goalFallbackItem}>
-            <TextInput
-              value={fallbackInput}
-              onChangeText={setFallbackInput}
-              style={styles.smallInput}
-              keyboardType={goalType === 'custom' ? 'default' : 'numeric'}
-              placeholder={unitLabel}
-              placeholderTextColor={Colors.textMedium}
-            />
+          <View style={styles.goalFallbackRow}>
+            <View style={styles.goalFallbackItem}>
+              <Text style={styles.label}>Goal</Text>
+            </View>
+
+            <View style={styles.goalFallbackItem}>
+              <Text style={styles.label}>Fallback</Text>
+              <Text style={styles.helperText}>(make it a bit easier)</Text>
+            </View>
+          </View>
+
+          <View style={styles.goalFallbackRow}>
+            <View style={styles.goalFallbackItem}>
+              <TextInput
+                value={goalInput}
+                onChangeText={setGoalInput}
+                style={styles.smallInput}
+                keyboardType={goalType === 'custom' ? 'default' : 'numeric'}
+                placeholder={unitLabel}
+                placeholderTextColor={Colors.textMedium}
+              />
+            </View>
+
+            <View style={styles.goalFallbackItem}>
+              <TextInput
+                value={fallbackInput}
+                onChangeText={setFallbackInput}
+                style={styles.smallInput}
+                keyboardType={goalType === 'custom' ? 'default' : 'numeric'}
+                placeholder={unitLabel}
+                placeholderTextColor={Colors.textMedium}
+              />
+            </View>
           </View>
         </View>
-      </View>
 
-      <AddButton
-        label={
-          submitting ? (isEditing ? 'Updating...' : 'Adding...') : isEditing ? 'Update' : 'Add'
-        }
-        onPress={handleAddHabit}
-        disabled={submitting || loading}
-        style={styles.addButton}
-      />
+        <AddButton
+          label={
+            submitting ? (isEditing ? 'Updating...' : 'Adding...') : isEditing ? 'Update' : 'Add'
+          }
+          onPress={handleAddHabit}
+          disabled={submitting || loading}
+          style={styles.addButton}
+        />
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 }
