@@ -8,14 +8,18 @@ import {
   Text,
   View,
 } from 'react-native';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import { Colors } from '../constants/colors';
 import { Habit } from '../lib/models/habits';
 import { supabase } from '../lib/supabase';
 import { HabitCard } from '../components/HabitCard';
+import AddButton from '../components/AddButton';
+import type { ManageStackParamList } from '../navigation/types';
 
 export default function ManageHabitsScreen() {
+  const navigation = useNavigation<NativeStackNavigationProp<ManageStackParamList>>();
   const [habits, setHabits] = useState<Habit[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -146,9 +150,7 @@ export default function ManageHabitsScreen() {
         </View>
       )}
 
-      <Pressable style={styles.addButton} onPress={() => {}}>
-        <Text style={styles.addButtonText}>Add</Text>
-      </Pressable>
+      <AddButton onPress={() => navigation.navigate('ManageDetails')} style={styles.addButton} />
     </View>
   );
 }
@@ -158,7 +160,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.background,
     paddingHorizontal: 20,
-    paddingTop: 18,
   },
   list: {
     flex: 1,
@@ -181,16 +182,5 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 32,
     alignSelf: 'center',
-    backgroundColor: Colors.strongAccent,
-    minWidth: 148,
-    borderRadius: 24,
-    paddingVertical: 14,
-    paddingHorizontal: 24,
-    alignItems: 'center',
-  },
-  addButtonText: {
-    fontSize: 34,
-    color: Colors.textDark,
-    fontWeight: '500',
   },
 });

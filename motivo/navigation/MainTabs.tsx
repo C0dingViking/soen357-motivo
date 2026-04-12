@@ -4,13 +4,13 @@ import { StyleSheet, View } from 'react-native';
 
 import HomeScreen from '../screens/HomeScreen';
 import ProgressScreen from '../screens/ProgressScreen';
-import ManageHabitsScreen from '../screens/ManageHabitsScreen';
 import RewardsScreen from '../screens/RewardsScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import { MainTabParamList } from './types';
 import BottomNavBar from '../components/BottomNavBar';
 import Header from '../components/Header';
 import { Colors } from '../constants/colors';
+import ManageStackNavigator from './ManageStackNavigator';
 
 const Tab = createMaterialTopTabNavigator<MainTabParamList>();
 
@@ -26,7 +26,7 @@ export default function MainTabs() {
         >
           <Tab.Screen name="Home" component={HomeScreen} />
           <Tab.Screen name="Progress" component={ProgressScreen} />
-          <Tab.Screen name="Manage" component={ManageHabitsScreen} />
+          <Tab.Screen name="Manage" component={ManageStackNavigator} />
           <Tab.Screen name="Rewards" component={RewardsScreen} />
           <Tab.Screen name="Settings" component={SettingsScreen} />
         </Tab.Navigator>

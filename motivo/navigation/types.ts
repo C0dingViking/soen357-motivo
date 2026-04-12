@@ -11,3 +11,8 @@ export type MainTabParamList = {
   Rewards: undefined;
   Settings: undefined;
 };
+
+export type ManageStackParamList = {
+  Manage: undefined;
+  ManageDetails: undefined;
+};
