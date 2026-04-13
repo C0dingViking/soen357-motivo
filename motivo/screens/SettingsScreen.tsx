@@ -4,9 +4,11 @@ import { View, Text, StyleSheet, Alert } from 'react-native';
 import { Colors } from '../constants/colors';
 import { supabase } from '../lib/supabase';
 import Button from '../components/Button';
+import { showInAppNotification } from '../utils/notificationService';
 
 export default function SettingsScreen() {
   const [isSigningOut, setIsSigningOut] = useState(false);
+  const [isSendingNotification, setIsSendingNotification] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleLogout = async () => {
@@ -23,6 +25,21 @@ export default function SettingsScreen() {
     }
   };
 
+  const handleSendInAppNotification = () => {
+    if (isSendingNotification) return;
+
+    setError(null);
+    setIsSendingNotification(true);
+
+    showInAppNotification({
+      title: 'After lunch: 2 min walk',
+      message: 'Lunch is done. Take a 2 minute walk to refresh your mind and boost your energy!',
+      onDismiss: () => {
+        setIsSendingNotification(false);
+      },
+    });
+  };
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Settings</Text>
@@ -30,6 +47,10 @@ export default function SettingsScreen() {
 
       {!!error && <Text style={styles.error}>{error}</Text>}
 
+      <Button
+        text={isSendingNotification ? 'Sending…' : 'Send in-app notification'}
+        onPress={handleSendInAppNotification}
+      />
       <Button text={isSigningOut ? 'Logging out…' : 'Log out'} onPress={handleLogout} />
     </View>
   );
