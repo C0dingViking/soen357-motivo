@@ -1,14 +1,18 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Alert, Pressable, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, Alert, Pressable, ScrollView, TextInput } from 'react-native';
 
 import { Colors } from '../constants/colors';
 import { supabase } from '../lib/supabase';
 import { showInAppNotification } from '../utils/notificationService';
+import { notifyProfileRefresh } from '../lib/profileRefresh';
 
 export default function SettingsScreen() {
   const [isSigningOut, setIsSigningOut] = useState(false);
+  const [isSavingName, setIsSavingName] = useState(false);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [profileName, setProfileName] = useState('name');
+  const [savedFirstName, setSavedFirstName] = useState('name');
+  const [fullNameSuffix, setFullNameSuffix] = useState('');
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -26,7 +30,13 @@ export default function SettingsScreen() {
         .single();
 
       if (data?.full_name) {
-        setProfileName(data.full_name.split(' ')[0]);
+        const fullName = data.full_name.trim();
+        const [firstName, ...rest] = fullName.split(/\s+/);
+        const safeFirstName = firstName || 'name';
+
+        setProfileName(safeFirstName);
+        setSavedFirstName(safeFirstName);
+        setFullNameSuffix(rest.join(' '));
       }
     };
 
@@ -93,6 +103,55 @@ export default function SettingsScreen() {
     ]);
   };
 
+  const handleSaveFirstName = async () => {
+    if (isSavingName) return;
+
+    const nextFirstName = profileName.trim();
+
+    if (!nextFirstName) {
+      setProfileName(savedFirstName);
+      return;
+    }
+
+    if (nextFirstName === savedFirstName) {
+      return;
+    }
+
+    setError(null);
+    setIsSavingName(true);
+
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
+      const fullName = fullNameSuffix ? `${nextFirstName} ${fullNameSuffix}` : nextFirstName;
+
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ full_name: fullName })
+        .eq('id', user.id);
+
+      if (updateError) {
+        throw updateError;
+      }
+
+      setSavedFirstName(nextFirstName);
+      notifyProfileRefresh();
+    } catch (saveError) {
+      const message = saveError instanceof Error ? saveError.message : 'Could not update name.';
+      setError(message);
+      setProfileName(savedFirstName);
+      Alert.alert('Update failed', message);
+    } finally {
+      setIsSavingName(false);
+    }
+  };
+
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <Text style={styles.sectionHeading}>App settings</Text>
@@ -122,9 +181,19 @@ export default function SettingsScreen() {
       <Text style={styles.sectionHeading}>User settings</Text>
 
       <View style={styles.row}>
-        <Text style={styles.rowTitle}>Profile name</Text>
+        <Text style={styles.rowTitle}>Display name</Text>
         <View style={styles.nameChip}>
-          <Text style={styles.nameText}>{profileName}</Text>
+          <TextInput
+            value={profileName}
+            onChangeText={setProfileName}
+            onEndEditing={handleSaveFirstName}
+            onSubmitEditing={handleSaveFirstName}
+            autoCapitalize="words"
+            returnKeyType="done"
+            maxLength={24}
+            editable={!isSavingName}
+            style={styles.nameInput}
+          />
         </View>
       </View>
 
@@ -147,7 +216,7 @@ export default function SettingsScreen() {
           <Text style={styles.rowTitle}>Delete account</Text>
           <Text style={styles.rowSubtitle}>All user data will be deleted</Text>
         </View>
-        <Pressable style={[styles.pillButton, styles.rowDeleteButton]} onPress={handleDeleteAccount}>
+        <Pressable style={[styles.pillButton, styles.deletePillButton]} onPress={handleDeleteAccount}>
           <Text style={styles.resetText}>Delete</Text>
         </Pressable>
       </View>
@@ -181,14 +250,10 @@ const styles = StyleSheet.create({
   },
   rowDelete: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     justifyContent: 'space-between',
     marginBottom: 16,
     gap: 10,
-  },
-  rowDeleteButton: {
-    alignSelf: 'flex-start',
-    marginTop: 2,
   },
   rowTextWrap: {
     flex: 1,
@@ -236,6 +301,9 @@ const styles = StyleSheet.create({
     paddingVertical: 9,
     alignItems: 'center',
   },
+  deletePillButton: {
+    marginTop: 0,
+  },
   pillButtonText: {
     color: Colors.textDark,
     fontSize: 12,
@@ -255,6 +323,11 @@ const styles = StyleSheet.create({
   nameText: {
     color: Colors.textMedium,
     fontSize: 16,
+  },
+  nameInput: {
+    color: Colors.textMedium,
+    fontSize: 16,
+    padding: 0,
   },
   error: {
     color: Colors.errorRed,
