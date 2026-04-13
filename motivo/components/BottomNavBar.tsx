@@ -20,7 +20,7 @@ type IconName = React.ComponentProps<typeof Feather>['name'];
 const ROUTE_ICONS: Record<string, IconName> = {
   Home: 'home',
   Progress: 'pie-chart',
-  Add: 'plus',
+  Manage: 'plus',
   Rewards: 'hexagon',
   Settings: 'settings',
 };

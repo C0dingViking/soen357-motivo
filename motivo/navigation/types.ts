@@ -7,7 +7,12 @@ export type RootStackParamList = {
 export type MainTabParamList = {
   Home: undefined;
   Progress: undefined;
-  Add: undefined;
+  Manage: undefined;
   Rewards: undefined;
   Settings: undefined;
+};
+
+export type ManageStackParamList = {
+  Manage: undefined;
+  ManageDetails: { habitId?: string };
 };
