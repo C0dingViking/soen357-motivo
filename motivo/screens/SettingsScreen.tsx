@@ -171,8 +171,8 @@ export default function SettingsScreen() {
           <Text style={styles.rowTitle}>Reset progress</Text>
           <Text style={styles.rowSubtitle}>Reset earned points and levels</Text>
         </View>
-        <Pressable style={styles.pillButton} onPress={handleResetProgress}>
-          <Text style={styles.resetText}>Reset</Text>
+        <Pressable style={[styles.pillButton, styles.destructivePillButton]} onPress={handleResetProgress}>
+          <Text style={styles.destructivePillButtonText}>Reset</Text>
         </Pressable>
       </View>
 
@@ -216,8 +216,11 @@ export default function SettingsScreen() {
           <Text style={styles.rowTitle}>Delete account</Text>
           <Text style={styles.rowSubtitle}>All user data will be deleted</Text>
         </View>
-        <Pressable style={[styles.pillButton, styles.deletePillButton]} onPress={handleDeleteAccount}>
-          <Text style={styles.resetText}>Delete</Text>
+        <Pressable
+          style={[styles.pillButton, styles.deletePillButton, styles.destructivePillButton]}
+          onPress={handleDeleteAccount}
+        >
+          <Text style={styles.destructivePillButtonText}>Delete</Text>
         </Pressable>
       </View>
 
@@ -293,7 +296,7 @@ const styles = StyleSheet.create({
   },
   pillButton: {
     minWidth: 110,
-    borderRadius: 18,
+    borderRadius: 15,
     borderWidth: 1,
     borderColor: Colors.textMedium,
     backgroundColor: Colors.strongAccent,
@@ -303,6 +306,15 @@ const styles = StyleSheet.create({
   },
   deletePillButton: {
     marginTop: 0,
+  },
+  destructivePillButton: {
+    backgroundColor: Colors.errorButton,
+    borderColor: Colors.textMedium,
+  },
+  destructivePillButtonText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '500',
   },
   pillButtonText: {
     color: Colors.textDark,
