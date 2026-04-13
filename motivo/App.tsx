@@ -6,6 +6,7 @@ import * as NavigationBar from 'expo-navigation-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import RootNavigator from './navigation/RootNavigator';
+import InAppNotificationCenter from './components/InAppNotificationCenter';
 
 export default function App() {
   let [fontsLoaded] = useFonts({
@@ -31,6 +32,7 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <RootNavigator />
+      <InAppNotificationCenter />
     </SafeAreaProvider>
   );
 }
