@@ -1,6 +1,8 @@
-import React, { use, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, Dimensions, Pressable } from 'react-native';
 import { Colors } from '../constants/colors';
+import { fetchUserHabits } from '../lib/habitOperations';
+import { Habit } from '../lib/models/habits';
 import { supabase } from '../lib/supabase';
 
 type Props = {
@@ -13,6 +15,16 @@ type Day = {
   label: string;
   date: string;
   isToday: boolean;
+};
+
+type CompletionRow = {
+  completed_date: string;
+  habit_id: string;
+};
+
+type HabitRow = {
+  id: string;
+  created_at: string;
 };
 
 const ITEM_SIZE = 50;
@@ -49,39 +61,60 @@ const generateDays = (): Day[] => {
 const fetchCompletions = async (userId: string) => {
   const { data, error } = await supabase
     .from('habit_completions')
-    .select('completed_date')
+    .select('completed_date, habit_id')
     .eq('user_id', userId);
 
   if (error) throw error;
 
-  return data;
+  return (data ?? []) as CompletionRow[];
 };
 
-const buildCompletionMap = (rows: { completed_date: string }[]) => {
-  const map: Record<string, number> = {};
+const fetchHabits = async () => {
+  const { data, error } = await fetchUserHabits();
 
-  for (const row of rows) {
-    const date = row.completed_date;
-
-    map[date] = (map[date] || 0) + 1;
+  if (error) {
+    throw new Error(error);
   }
 
-  return map;
+  return ((data as Habit[]) ?? []).map((habit) => ({
+    id: habit.id,
+    created_at: habit.created_at,
+  })) as HabitRow[];
 };
 
-const fetchHabitsCount = async (userId: string) => {
-  const { data: habits, error } = await supabase
-    .from('habits')
-    .select('id')
-    .eq('user_id', userId)
-    .eq('is_active', true);
+const getLocalDateString = (isoDate: string) => formatDate(new Date(isoDate));
 
-  if (error || !habits) {
-    console.error('Error fetching habits count:', error);
-    return 0;
+const buildDayStatusMaps = (days: Day[], habits: HabitRow[], completions: CompletionRow[]) => {
+  const requiredMap: Record<string, number> = {};
+  const completedMap: Record<string, number> = {};
+
+  const completionsByDate = completions.reduce<Record<string, CompletionRow[]>>((acc, row) => {
+    if (!acc[row.completed_date]) {
+      acc[row.completed_date] = [];
+    }
+    acc[row.completed_date].push(row);
+    return acc;
+  }, {});
+
+  for (const day of days) {
+    const eligibleHabitIds = new Set(
+      habits
+        .filter((habit) => getLocalDateString(habit.created_at) <= day.date)
+        .map((habit) => habit.id),
+    );
+
+    requiredMap[day.date] = eligibleHabitIds.size;
+
+    const completedIdsForDay = new Set(
+      (completionsByDate[day.date] ?? [])
+        .map((row) => row.habit_id)
+        .filter((habitId) => eligibleHabitIds.has(habitId)),
+    );
+
+    completedMap[day.date] = completedIdsForDay.size;
   }
 
-  return habits.length;
+  return { requiredMap, completedMap };
 };
 
 export const DaySelector = ({ onDateChange, userId, reloadTrigger = 0 }: Props) => {
@@ -90,12 +123,15 @@ export const DaySelector = ({ onDateChange, userId, reloadTrigger = 0 }: Props) 
 
   const todayIndex = days.findIndex((d) => d.isToday);
   const [selectedIndex, setSelectedIndex] = useState(todayIndex);
-  const [completionMap, setCompletionMap] = useState<Record<string, number>>({});
-  const [totalHabits, setTotalHabits] = useState(0);
+  const [completedCountMap, setCompletedCountMap] = useState<Record<string, number>>({});
+  const [requiredHabitCountMap, setRequiredHabitCountMap] = useState<Record<string, number>>({});
+  const [statsLoaded, setStatsLoaded] = useState(false);
 
   useEffect(() => {
     onDateChange(days[selectedIndex].date);
+  }, [days, onDateChange, selectedIndex]);
 
+  useEffect(() => {
     setTimeout(() => {
       listRef.current?.scrollToIndex({
         index: todayIndex,
@@ -103,35 +139,43 @@ export const DaySelector = ({ onDateChange, userId, reloadTrigger = 0 }: Props) 
         viewPosition: 0.5,
       });
     }, 0);
-
-    const load = async () => {
-      const data = await fetchCompletions(userId);
-      const map = buildCompletionMap(data);
-      const habitsCount = await fetchHabitsCount(userId);
-
-      setCompletionMap(map);
-      setTotalHabits(habitsCount);
-    };
-
-    load();
-  }, [userId, selectedIndex]);
+  }, [todayIndex]);
 
   useEffect(() => {
     const load = async () => {
-      const data = await fetchCompletions(userId);
-      const map = buildCompletionMap(data);
-      const habitsCount = await fetchHabitsCount(userId);
+      if (!userId) {
+        setCompletedCountMap({});
+        setRequiredHabitCountMap({});
+        setStatsLoaded(true);
+        return;
+      }
 
-      setCompletionMap(map);
-      setTotalHabits(habitsCount);
+      setStatsLoaded(false);
+
+      try {
+        const [completionRows, habits] = await Promise.all([
+          fetchCompletions(userId),
+          fetchHabits(),
+        ]);
+
+        const { requiredMap, completedMap } = buildDayStatusMaps(days, habits, completionRows);
+
+        setRequiredHabitCountMap(requiredMap);
+        setCompletedCountMap(completedMap);
+      } catch (error) {
+        console.error('Error loading day selector stats:', error);
+        setCompletedCountMap({});
+        setRequiredHabitCountMap({});
+      } finally {
+        setStatsLoaded(true);
+      }
     };
 
     load();
-  }, [userId, reloadTrigger]);
+  }, [days, userId, reloadTrigger]);
 
   const onSelect = (index: number) => {
     setSelectedIndex(index);
-    onDateChange(days[index].date);
 
     listRef.current?.scrollToIndex({
       index,
@@ -155,8 +199,10 @@ export const DaySelector = ({ onDateChange, userId, reloadTrigger = 0 }: Props) 
           const isSelected = index === selectedIndex;
           const isToday = item.isToday;
 
-          const completions = completionMap[item.date] ?? 0;
-          const isComplete = completions >= totalHabits;
+          const completions = completedCountMap[item.date] ?? 0;
+          const requiredHabits = requiredHabitCountMap[item.date] ?? 0;
+          const isComplete =
+            statsLoaded && requiredHabits > 0 && completions > 0 && completions >= requiredHabits;
           const isPast = index < todayIndex;
 
           const colorStyle = isComplete ? styles.complete : styles.incomplete;
