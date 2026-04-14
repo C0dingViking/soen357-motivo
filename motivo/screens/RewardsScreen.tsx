@@ -28,7 +28,7 @@ const BadgeHistoryCard = ({ earned, icon, pointsLabel, earnedLabel }: Gamificati
     <View style={[styles.badgeCard, !earned && styles.badgeCardLocked]}>
       <View style={styles.badgeRow}>
         {icon === orangeFlameBadge ? (
-          <StreakAnimation streak={0} size={45} interval={125} />
+          <StreakAnimation streak={0} size={52} interval={125} />
         ) : (
           <Image
             source={icon}
