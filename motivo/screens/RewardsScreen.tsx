@@ -20,20 +20,30 @@ import {
   type GamificationSnapshot,
 } from '../lib/gamification';
 import { subscribeProfileRefresh } from '../lib/profileRefresh';
+import orangeFlameBadge from '../assets/streaks/orange/burning_loop_1.png';
+import { StreakAnimation } from '../components/StreakAnimation';
 
 const BadgeHistoryCard = ({ earned, icon, pointsLabel, earnedLabel }: GamificationBadge) => {
   return (
     <View style={[styles.badgeCard, !earned && styles.badgeCardLocked]}>
       <View style={styles.badgeRow}>
-        <Image
-          source={icon}
-          style={[styles.badgeIcon, !earned && styles.badgeIconLocked]}
-          resizeMode="contain"
-        />
+        {icon === orangeFlameBadge ? (
+          <StreakAnimation streak={0} size={45} interval={125} />
+        ) : (
+          <Image
+            source={icon}
+            style={[styles.badgeIcon, !earned && styles.badgeIconLocked]}
+            resizeMode="contain"
+          />
+        )}
         <Text style={[styles.badgePoints, !earned && styles.badgePointsLocked]}>{pointsLabel}</Text>
       </View>
 
-      {earnedLabel ? <Text style={styles.badgeEarned}>{earnedLabel}</Text> : <View style={styles.badgeEarnedSpacer} />}
+      {earnedLabel ? (
+        <Text style={styles.badgeEarned}>{earnedLabel}</Text>
+      ) : (
+        <View style={styles.badgeEarnedSpacer} />
+      )}
     </View>
   );
 };
@@ -66,9 +76,12 @@ export default function RewardsScreen() {
   const orderedBadges = useMemo(() => [...snapshot.badges].reverse(), [snapshot.badges]);
   const highestThreshold = snapshot.badges[snapshot.badges.length - 1]?.threshold ?? 1;
   const progressTarget = snapshot.nextBadge?.threshold ?? highestThreshold;
-  const progressValue = snapshot.nextBadge ? Math.min(snapshot.points, progressTarget) : progressTarget;
+  const progressValue = snapshot.nextBadge
+    ? Math.min(snapshot.points, progressTarget)
+    : progressTarget;
   const progressRatio = progressTarget > 0 ? progressValue / progressTarget : 0;
-  const nextBadgeIcon = snapshot.nextBadge?.icon ?? snapshot.latestBadge?.icon ?? snapshot.headerBadgeIcon;
+  const nextBadgeIcon =
+    snapshot.nextBadge?.icon ?? snapshot.latestBadge?.icon ?? snapshot.headerBadgeIcon;
   const ringProgress = snapshot.levelStep / snapshot.levelStepGoal;
   const ringSize = Math.min(width - 112, 240);
   const ringStroke = Math.max(24, ringSize * 0.16);
@@ -93,7 +106,11 @@ export default function RewardsScreen() {
         <Text style={styles.nextBadgeText}>
           {snapshot.nextBadge ? 'Next badge' : 'All badges unlocked'}
         </Text>
-        <Image source={nextBadgeIcon} style={styles.nextBadgeIcon} resizeMode="contain" />
+        {nextBadgeIcon === orangeFlameBadge ? (
+          <StreakAnimation streak={0} size={34} interval={125} />
+        ) : (
+          <Image source={nextBadgeIcon} style={styles.nextBadgeIcon} resizeMode="contain" />
+        )}
       </View>
 
       <View style={styles.progressCard}>

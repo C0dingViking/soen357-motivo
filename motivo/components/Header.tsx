@@ -12,10 +12,13 @@ import {
   formatGamificationPoints,
   type GamificationSnapshot,
 } from '../lib/gamification';
+import { StreakAnimation } from './StreakAnimation';
 
 export default function Header() {
   const insets = useSafeAreaInsets();
-  const [userData, setUserData] = useState<GamificationSnapshot>(createFallbackGamificationSnapshot());
+  const [userData, setUserData] = useState<GamificationSnapshot>(
+    createFallbackGamificationSnapshot(),
+  );
 
   useEffect(() => {
     const loadUser = async () => {
@@ -50,14 +53,18 @@ export default function Header() {
       <View style={styles.right}>
         <View style={styles.badgeContainer}>
           {earnedBadges.length > 0 ? (
-            earnedBadges.map((badge) => (
-              <Image
-                key={badge.id}
-                source={badge.icon}
-                style={styles.earnedBadgeIcon}
-                resizeMode="contain"
-              />
-            ))
+            earnedBadges.map((badge) =>
+              badge.id === 'flame' ? (
+                <StreakAnimation key={badge.id} streak={userData.streak} size={32} interval={125} />
+              ) : (
+                <Image
+                  key={badge.id}
+                  source={badge.icon}
+                  style={styles.earnedBadgeIcon}
+                  resizeMode="contain"
+                />
+              ),
+            )
           ) : (
             <Image
               source={userData.headerBadgeIcon}
