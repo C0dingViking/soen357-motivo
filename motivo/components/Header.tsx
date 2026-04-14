@@ -3,53 +3,27 @@ import { View, Text, StyleSheet, Image } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Colors } from '../constants/colors';
-import { supabase } from '../lib/supabase';
 import { subscribeProfileRefresh } from '../lib/profileRefresh';
 import logo from '../assets/logo_without_name.png';
 import { withOpacity } from '../utils/colors';
-import { Rank } from './Rank';
+import {
+  createFallbackGamificationSnapshot,
+  fetchGamificationSnapshotForCurrentUser,
+  formatGamificationPoints,
+  type GamificationSnapshot,
+} from '../lib/gamification';
 import { StreakAnimation } from './StreakAnimation';
-import ptsIcon from '../assets/diamond-amethyst-1.png';
-
-type UserStats = {
-  name: string;
-  rank: number;
-  points: number;
-  streak: number;
-};
 
 export default function Header() {
   const insets = useSafeAreaInsets();
-  const [userData, setUserData] = useState<UserStats>({
-    name: 'User',
-    rank: 0,
-    points: 0,
-    streak: 0,
-  });
-  const [loading, setLoading] = useState(true);
+  const [userData, setUserData] = useState<GamificationSnapshot>(
+    createFallbackGamificationSnapshot(),
+  );
 
   useEffect(() => {
     const loadUser = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('full_name, rank, points, streak')
-        .eq('id', user.id)
-        .single();
-
-      if (data) {
-        setUserData({
-          name: data.full_name.split(' ')[0],
-          rank: data.rank,
-          points: data.points,
-          streak: data.streak,
-        });
-      }
-      setLoading(false);
+      const snapshot = await fetchGamificationSnapshotForCurrentUser();
+      setUserData(snapshot);
     };
 
     loadUser();
@@ -62,6 +36,8 @@ export default function Header() {
       unsubscribe();
     };
   }, []);
+
+  const earnedBadges = userData.badges.filter((badge) => badge.earned);
 
   return (
     <View style={[styles.container, { paddingTop: Math.max(insets.top, 0) + 12 }]}>
@@ -76,16 +52,29 @@ export default function Header() {
       </View>
       <View style={styles.right}>
         <View style={styles.badgeContainer}>
-          <View style={styles.rankWrapper}>
-            <Rank level={userData.rank} />
-          </View>
-          <View style={styles.streakWrapper}>
-            <StreakAnimation streak={userData.streak} />
-          </View>
+          {earnedBadges.length > 0 ? (
+            earnedBadges.map((badge) =>
+              badge.id === 'flame' ? (
+                <StreakAnimation key={badge.id} streak={userData.streak} size={32} interval={125} />
+              ) : (
+                <Image
+                  key={badge.id}
+                  source={badge.icon}
+                  style={styles.earnedBadgeIcon}
+                  resizeMode="contain"
+                />
+              ),
+            )
+          ) : (
+            <Image
+              source={userData.headerBadgeIcon}
+              style={[styles.earnedBadgeIcon, styles.lockedBadgeIcon]}
+              resizeMode="contain"
+            />
+          )}
         </View>
         <View style={styles.ptsContainer}>
-          <Text style={styles.ptsText}>{_formatPoints(userData.points)}</Text>
-          <Image source={ptsIcon} style={styles.ptsIcon} />
+          <Text style={styles.ptsText}>{formatGamificationPoints(userData.points)}</Text>
         </View>
       </View>
     </View>
@@ -128,20 +117,12 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.primaryGreen,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'flex-start',
+    justifyContent: 'center',
     borderRadius: 20,
-  },
-  rankWrapper: {
-    height: 50,
-    justifyContent: 'flex-end',
-    marginBottom: -5,
-    marginLeft: 5,
-  },
-  streakWrapper: {
-    height: 50,
-    justifyContent: 'flex-start',
-    marginTop: -12,
-    marginRight: 5,
+    minHeight: 54,
+    minWidth: 74,
+    paddingHorizontal: 10,
+    gap: 6,
   },
   ptsContainer: {
     flexDirection: 'row',
@@ -149,18 +130,16 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   ptsText: {
-    marginRight: -5,
+    color: Colors.textDark,
+    fontSize: 20,
+    marginTop: 6,
   },
-  ptsIcon: {
-    width: 55,
-    height: 55,
+  earnedBadgeIcon: {
+    width: 32,
+    height: 32,
     resizeMode: 'contain',
   },
+  lockedBadgeIcon: {
+    opacity: 0.45,
+  },
 });
-
-const _formatPoints = (pts: number) => {
-  if (pts >= 1000) {
-    return `${(pts / 1000).toFixed(1)}k`;
-  }
-  return pts.toString();
-};
